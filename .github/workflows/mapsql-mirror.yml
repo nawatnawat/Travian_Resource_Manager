@@ -1,0 +1,47 @@
+# วางไฟล์นี้ในรีโพที่ .github/workflows/mapsql-mirror.yml
+# ทำอะไร: ทุกวัน 07:15 น. (เวลาไทย) ดาวน์โหลด map.sql ของเซิร์ฟเวอร์ใน SERVERS
+#          แล้วเก็บไว้ใน branch "mapdata" (เก็บเฉพาะฉบับล่าสุด รีโพไม่โตขึ้นทุกวัน)
+# แอปจะดึงจาก https://raw.githubusercontent.com/<ชื่อ>/<รีโพ>/mapdata/<เซิร์ฟเวอร์>.sql เองเมื่อดึงตรงจากเกมไม่ได้
+# เพิ่มเซิร์ฟเวอร์: ใส่ต่อท้ายใน SERVERS คั่นด้วยเว้นวรรค (เฉพาะชื่อโดเมน ไม่ต้องมี https://)
+
+name: map.sql mirror
+
+on:
+  schedule:
+    - cron: '15 0 * * *'   # 00:15 UTC = 07:15 น. เวลาไทย (หลังเกมสร้าง map.sql ใหม่ราว 07:05)
+  workflow_dispatch: {}     # กด "Run workflow" เองได้ในแท็บ Actions
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    env:
+      SERVERS: "ts21.x2.asia.travian.com"
+    steps:
+      - name: Download map.sql
+        run: |
+          mkdir -p out
+          ok=0
+          for s in $SERVERS; do
+            if curl -fsSL --retry 3 --retry-delay 20 --max-time 120 \
+                 -A "Mozilla/5.0 (map.sql mirror for Travian Resource Manager)" \
+                 "https://$s/map.sql" -o "out/$s.sql" && grep -q "INSERT INTO" "out/$s.sql"; then
+              echo "OK  $s ($(wc -l < "out/$s.sql") lines)"; ok=$((ok+1))
+            else
+              echo "::warning::download failed: $s"; rm -f "out/$s.sql"
+            fi
+          done
+          if [ "$ok" -eq 0 ]; then echo "::error::no map.sql downloaded"; exit 1; fi
+
+      - name: Publish to the mapdata branch (latest copy only)
+        run: |
+          cd out
+          git init -q
+          git checkout -q -b mapdata
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -q -m "map.sql $(date -u +%Y-%m-%d)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" mapdata
