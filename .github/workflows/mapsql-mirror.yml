@@ -1,8 +1,9 @@
-# วางไฟล์นี้ในรีโพที่ .github/workflows/mapsql-mirror.yml
-# ทำอะไร: ทุกวัน 07:15 น. (เวลาไทย) ดาวน์โหลด map.sql ของเซิร์ฟเวอร์ใน SERVERS
-#          แล้วเก็บไว้ใน branch "mapdata" (เก็บเฉพาะฉบับล่าสุด รีโพไม่โตขึ้นทุกวัน)
-# แอปจะดึงจาก https://raw.githubusercontent.com/<ชื่อ>/<รีโพ>/mapdata/<เซิร์ฟเวอร์>.sql เองเมื่อดึงตรงจากเกมไม่ได้
-# เพิ่มเซิร์ฟเวอร์: ใส่ต่อท้ายใน SERVERS คั่นด้วยเว้นวรรค (เฉพาะชื่อโดเมน ไม่ต้องมี https://)
+# วางไฟล์นี้ในรีโพที่ .github/workflows/mapsql-mirror.yml (แทนไฟล์เดิม)
+# ทำอะไร: ทุกวัน 07:15 น. (เวลาไทย)
+#   1) รวมรายชื่อเซิร์ฟเวอร์ = FIXED_SERVERS + เซิร์ฟเวอร์ที่ผู้ใช้แอปเลือกใช้ใน 30 วันล่าสุด (อ่านจาก Firestore "mapServers")
+#   2) ดาวน์โหลด map.sql ของแต่ละเซิร์ฟเวอร์ · ถ้าวันนี้ดาวน์โหลดไม่สำเร็จ ใช้ไฟล์เมื่อวานแทน
+#   3) เก็บไว้ใน branch "mapdata" (เฉพาะฉบับล่าสุด รีโพไม่โตขึ้นทุกวัน)
+# แอปดึงจาก https://raw.githubusercontent.com/<ชื่อ>/<รีโพ>/mapdata/<เซิร์ฟเวอร์>.sql เองเมื่อดึงตรงจากเกมไม่ได้
 
 name: map.sql mirror
 
@@ -18,22 +19,60 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     env:
-      SERVERS: "ts21.x2.asia.travian.com"
+      FIXED_SERVERS: "ts21.x2.asia.travian.com"   # ดึงเสมอ (คั่นด้วยเว้นวรรค)
+      FIREBASE_PROJECT: "travian-manager-c3b13"
+      ACTIVE_DAYS: "30"                           # เซิร์ฟเวอร์ที่ไม่มีใครใช้นานกว่านี้ ไม่ดึง
+      MAX_SERVERS: "40"                           # ดึงไม่เกินกี่เซิร์ฟเวอร์ต่อวัน
     steps:
-      - name: Download map.sql
+      - name: Server list (fixed + chosen in the app)
         run: |
-          mkdir -p out
-          ok=0
-          for s in $SERVERS; do
+          python3 - > servers.txt <<'PY'
+          import json, os, re, sys, urllib.request, datetime
+          pat = re.compile(r'^[a-z0-9-]+(\.[a-z0-9-]+)*\.travian\.com$')
+          out = [s for s in os.environ['FIXED_SERVERS'].split() if pat.match(s)]
+          url = os.environ.get('LIST_URL') or ('https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/mapServers?pageSize=300' % os.environ['FIREBASE_PROJECT'])
+          try:
+              data = json.load(urllib.request.urlopen(url, timeout=30))
+              cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=int(os.environ['ACTIVE_DAYS']))
+              rows = []
+              for d in data.get('documents', []):
+                  host = d['name'].rsplit('/', 1)[-1]
+                  ts = d.get('fields', {}).get('lastSeen', {}).get('timestampValue')
+                  if not ts or len(host) > 80 or not pat.match(host):
+                      continue
+                  ts = re.sub(r'\.(\d+)', lambda m: '.' + m.group(1)[:6], ts).replace('Z', '+00:00')
+                  t = datetime.datetime.fromisoformat(ts)
+                  if t >= cutoff:
+                      rows.append((t, host))
+              for t, host in sorted(rows, reverse=True):   # ใช้ล่าสุดก่อน (ถ้าเกิน MAX_SERVERS)
+                  if host not in out:
+                      out.append(host)
+          except Exception as e:
+              print('::warning::cannot read the server list from Firebase: %s' % e, file=sys.stderr)
+          for s in out[:int(os.environ['MAX_SERVERS'])]:
+              print(s)
+          PY
+          echo "Servers today:"; cat servers.txt
+
+      - name: Download map.sql (keep yesterday's file if a download fails)
+        run: |
+          git clone -q --depth 1 --branch mapdata "https://github.com/${{ github.repository }}.git" prev 2>/dev/null || mkdir -p prev
+          mkdir -p out; ok=0
+          while read -r s; do
+            [ -z "$s" ] && continue
             if curl -fsSL --retry 3 --retry-delay 20 --max-time 120 \
                  -A "Mozilla/5.0 (map.sql mirror for Travian Resource Manager)" \
                  "https://$s/map.sql" -o "out/$s.sql" && grep -q "INSERT INTO" "out/$s.sql"; then
-              echo "OK  $s ($(wc -l < "out/$s.sql") lines)"; ok=$((ok+1))
+              echo "OK    $s ($(wc -l < "out/$s.sql") villages)"; ok=$((ok+1))
+            elif [ -f "prev/$s.sql" ]; then
+              cp "prev/$s.sql" "out/$s.sql"; echo "::warning::download failed, kept yesterday's file: $s"
             else
-              echo "::warning::download failed: $s"; rm -f "out/$s.sql"
+              rm -f "out/$s.sql"; echo "::warning::download failed: $s"
             fi
-          done
-          if [ "$ok" -eq 0 ]; then echo "::error::no map.sql downloaded"; exit 1; fi
+            sleep 2
+          done < servers.txt
+          if [ -z "$(ls -A out)" ]; then echo "::error::no map.sql at all"; exit 1; fi
+          echo "downloaded today: $ok"
 
       - name: Publish to the mapdata branch (latest copy only)
         run: |
