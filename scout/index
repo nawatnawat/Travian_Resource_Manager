@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>โปรแกรมสอดแนม · Travian Scout v0.4.1</title>
+<style>
+:root{--bg:#f3f1ea;--panel:#fff;--row:#f7f5ef;--ink:#1f2a25;--mute:#6b7a72;--line:#e2ddd0;--accent:#2f8f6b;--accent-soft:#dcefe6;--warn:#c98a00;--bad:#c0392b;--good:#2f8f4e;--shadow:0 1px 3px rgba(0,0,0,.08)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16191b;--panel:#202427;--row:#262b2f;--ink:#e7ece9;--mute:#9aa7a0;--line:#343a3e;--accent:#5fbf97;--accent-soft:#1f3a32;--warn:#e0b34a;--bad:#ef6b5e;--good:#5fbf7a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#16191b;--panel:#202427;--row:#262b2f;--ink:#e7ece9;--mute:#9aa7a0;--line:#343a3e;--accent:#5fbf97;--accent-soft:#1f3a32;--warn:#e0b34a;--bad:#ef6b5e;--good:#5fbf7a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+header{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 16px;background:linear-gradient(120deg,#3a2d1c,#5b4426 55%,#7a5a2e);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+header h1{margin:0;font-size:17px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+header h1 small{font-weight:400;opacity:.75;font-size:11px}
+.hbox{display:inline-flex;gap:4px;align-items:center;background:rgba(255,255,255,.12);padding:3px 6px;border-radius:10px}
+header select,header button,header input{font:inherit;font-size:13px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;padding:4px 9px;cursor:pointer}
+header select option{color:#111}
+header .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border-radius:999px;padding:3px 10px 3px 4px;cursor:pointer}
+.chip .av{width:24px;height:24px;border-radius:50%;background:#fff;color:#5b4426;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+main{padding:14px 16px;max-width:1500px;margin:0 auto}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.box h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
+.note{color:var(--mute);font-size:12.5px}
+.warn{color:var(--warn)}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:5px 11px;cursor:pointer}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.dng{color:var(--bad)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-width:0}
+input[type=number]{width:70px}
+.lnk{background:none;border:0;color:var(--accent);padding:2px 6px;font-weight:600}
+.set{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.set label{display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:4px 10px}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.side h3 .cnt{margin-left:auto;font-weight:400}
+.vl{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.vc{display:grid;grid-template-columns:1fr auto;gap:4px 8px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:var(--row)}
+.vc .t{font-weight:700}
+.vc .f{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;grid-column:1/-1;font-size:13px}
+.vc .f label{display:inline-flex;align-items:center;gap:4px}
+.vc .x{align-self:start}
+.pick{position:relative;flex:1;min-width:200px}
+.pick input{width:100%}
+.pl{display:none;position:absolute;left:0;right:0;top:100%;z-index:30;max-height:300px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);margin-top:4px;padding:4px}
+.pl.on{display:block}
+.pi{display:block;width:100%;text-align:left;border:0;border-radius:8px;background:none;padding:6px 8px;font-size:13px}
+.pi:hover,.pi.on{background:var(--accent-soft)}
+.addrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.scroll{overflow:auto}
+table.mx{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+.mx th,.mx td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+.mx thead th{position:sticky;top:0;background:var(--row);z-index:2;font-weight:700}
+.mx th.rh,.mx td.rh{position:sticky;left:0;background:var(--panel);text-align:left;z-index:1;min-width:230px}
+.mx thead th.rh{z-index:3;background:var(--row)}
+.mx .d{color:var(--mute);font-size:11.5px}
+.mx td.c b{font-variant-numeric:tabular-nums;font-size:13.5px}
+.mx td.c{min-width:150px;border-left:1px solid var(--line)}
+.mx td.c.s-none{background:rgba(230,184,77,.22)}   /* เหลือง = ยังไม่มีข้อมูล */
+.mx td.c.s-safe{background:rgba(47,143,78,.24)}    /* เขียว = ปลอดภัย (ทัพอยู่บ้านหลังเวลาปล่อย) */
+.mx td.c.s-gone{background:rgba(192,57,43,.26)}    /* แดง = ทัพหาย มีโอกาสโดน */
+.mx td.c .soon{color:var(--warn);font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:4px;border:1px solid rgba(0,0,0,.15)}
+.dot.none{background:#e6b84d}.dot.safe{background:#2f8f4e}.dot.gone{background:#c0392b}
+.cb{display:flex;gap:4px;justify-content:center;margin-top:4px}
+.cb button{padding:2px 8px;font-size:12px;border-radius:999px;background:var(--panel)}
+.cb button.on.safe{background:#2f8f4e;border-color:#2f8f4e;color:#fff;font-weight:700}
+.cb button.on.gone{background:#c0392b;border-color:#c0392b;color:#fff;font-weight:700}
+.cby{font-size:11px;color:var(--mute);margin-top:2px}
+.rsum{font-size:12px;margin-top:3px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{padding:8px 16px;font-weight:600;border-radius:10px}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tk{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 270px 150px;gap:8px 14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--row)}
+@media(max-width:900px){.tk{grid-template-columns:1fr}}
+.tk select{max-width:100%}
+.sq{width:100%;box-sizing:border-box;margin-bottom:4px}
+.tk .press{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.tk .cd{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.tk.u1{border-color:#c0392b;box-shadow:0 0 0 2px rgba(192,57,43,.25)}.tk.u1 .cd{color:#c0392b}
+.tk.u2 .cd{color:var(--warn)}
+.tk.late{opacity:.75}.tk.late .cd{color:#c0392b}
+.go{display:inline-block;padding:8px 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;text-decoration:none;white-space:nowrap}
+.go.off{background:var(--line);color:var(--mute);pointer-events:none}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft)}
+.when{font-size:12px;margin-top:2px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal.on{display:flex}
+.mcard{background:var(--panel);color:var(--ink);border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+.mcard h4{margin:0 0 10px;font-size:16px}
+.mbtn{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:13px;display:none;z-index:90;max-width:92vw}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 12px;border-radius:10px;background:var(--accent-soft);margin-bottom:12px;font-size:13.5px}
+.bar.ro{background:rgba(230,184,77,.2)}
+.empty{padding:20px;text-align:center}
+.help li{margin:4px 0}
+.hset{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px}
+.hset:empty{display:none}
+.hset label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.hset .hnote{opacity:.85;font-size:12px}
+.hset .hnote button{padding:1px 7px}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.grp .gl{font-weight:700;margin-right:2px}
+.grp .gt{padding:6px 12px;border-radius:999px;font-weight:600}
+.grp .gt.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);box-shadow:inset 0 0 0 1px var(--accent)}
+.grp .gact{margin-left:auto;display:flex;gap:4px}
+header .ver{cursor:pointer;background:rgba(255,255,255,.18);border-radius:999px;padding:1px 8px;opacity:1}
+header .ver:hover{background:rgba(255,255,255,.3)}
+.hseg{display:inline-flex;border:1px solid rgba(255,255,255,.35);border-radius:9px;overflow:hidden}
+header .hseg button{border:0;border-radius:0;padding:4px 9px;min-width:34px;font-weight:700;background:transparent;color:#fff}
+header .hseg button.on{background:#fff;color:#5b4426}
+.toc{display:flex;flex-wrap:wrap;gap:6px}
+.toc button{font-size:13px;padding:5px 12px;border-radius:999px}
+.hp details.box{padding:0;overflow:hidden}
+.hp summary{cursor:pointer;padding:13px 16px;font-weight:700;font-size:15.5px;list-style:none}
+.hp summary::-webkit-details-marker{display:none}
+.hp summary::before{content:'▸ ';color:var(--accent)}
+.hp details[open] summary::before{content:'▾ '}
+.hp details[open] summary{border-bottom:1px solid var(--line)}
+.hp details.qs{border:2px solid var(--accent)}
+.hbody{padding:6px 20px 14px;line-height:1.7}
+.hbody h4{margin:12px 0 4px;color:var(--accent)}
+.hbody li{margin:3px 0}
+.hbody code{background:var(--row);padding:1px 6px;border-radius:6px}
+.hbody table{border-collapse:collapse;margin:6px 0}.hbody td,.hbody th{border:1px solid var(--line);padding:4px 10px;text-align:left}
+.cl{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.clv{flex:none;width:150px;font-variant-numeric:tabular-nums}
+.clv b{color:var(--accent)}
+.clv b.new{background:var(--accent);color:#fff;border-radius:999px;padding:0 8px}
+.cls{color:var(--mute)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔭 โปรแกรมสอดแนม <small>Travian Scout</small> <small class="ver" title="ดู Change Log" onclick="openLog()">v0.4.1</small></h1>
+  <span class="hbox" title="โปรไฟล์ = เซิร์ฟเวอร์ที่เล่น"><select id="prsel" onchange="selProf(this.value)" title="โปรไฟล์ (เซิร์ฟเวอร์)"></select>
+    <button onclick="newProf()" title="เพิ่มโปรไฟล์ (เซิร์ฟเวอร์)">＋</button><button onclick="renameProf()" title="เปลี่ยนชื่อโปรไฟล์">✏️</button><button onclick="delProf()" title="ลบโปรไฟล์">🗑️</button></span>
+  <span class="sp"></span>
+  <span class="hseg" title="Language / ภาษา"><button id="lang-th" onclick="setLang('th')">TH</button><button id="lang-en" onclick="setLang('en')">EN</button></span>
+  <span class="hseg" title="ธีม"><button id="th-light" onclick="setTheme('light')" title="ธีมสว่าง">☀️</button><button id="th-dark" onclick="setTheme('dark')" title="ธีมมืด">🌙</button></span>
+  <span id="user"></span>
+  <div id="hset" class="hset"></div>
+</header>
+<main id="app"></main>
+<div id="modal" class="modal" onclick="if(event.target===this)mClose()"><div class="mcard" id="mcard"></div></div>
+<div id="toast"></div>
+<script>
+'use strict';
+/* ============ ข้อมูลเกม (จากแอป Travian Resource Manager) ============ */
+const UNITS={"Romans": [[0, "Legionnaire", 6], [1, "Praetorian", 5], [2, "Imperian", 7], [3, "Equites Legati", 16], [4, "Equites Imperatoris", 14], [5, "Equites Caesaris", 10], [6, "Battering Ram", 4], [7, "Fire Catapult", 3], [8, "Senator", 4], [9, "Settler", 5]], "Teutons": [[0, "Clubswinger", 7], [1, "Spearman", 7], [2, "Axeman", 6], [3, "Scout", 9], [4, "Paladin", 10], [5, "Teutonic Knight", 9], [6, "Ram", 4], [7, "Catapult", 3], [8, "Chief", 4], [9, "Settler", 5]], "Gauls": [[0, "Phalanx", 7], [1, "Swordsman", 6], [2, "Pathfinder", 17], [3, "Theutates Thunder", 19], [4, "Druidrider", 16], [5, "Haeduan", 13], [6, "Ram", 4], [7, "Trebuchet", 3], [8, "Chieftain", 5], [9, "Settler", 5]], "Egyptians": [[0, "Slave Militia", 7], [1, "Ash Warden", 6], [2, "Khopesh Warrior", 7], [3, "Sopdu Explorer", 16], [4, "Anhur Guard", 15], [5, "Resheph Chariot", 10], [6, "Ram", 4], [7, "Stone Catapult", 3], [8, "Nomarch", 4], [9, "Settler", 5]], "Huns": [[0, "Mercenary", 6], [1, "Bowman", 6], [2, "Spotter", 19], [3, "Steppe Rider", 16], [4, "Marksman", 15], [5, "Marauder", 14], [6, "Ram", 4], [7, "Catapult", 3], [8, "Logades", 5], [9, "Settler", 5]], "Vikings": [[0, "Thrall", 7], [1, "Shield Maiden", 7], [2, "Berserker", 5], [3, "Heimdall's Eye", 9], [4, "Huskarl Rider", 12], [5, "Valkyrie's Blessing", 9], [6, "Ram", 4], [7, "Catapult", 3], [8, "Jarl", 5], [9, "Settler", 5]], "Spartans": [[0, "Hoplite", 6], [1, "Sentinel", 9], [2, "Shieldsman", 8], [3, "Twinsteel Therion", 6], [4, "Elpida Rider", 16], [5, "Corinthian Crusher", 9], [6, "Ram", 4], [7, "Ballista", 3], [8, "Ephor", 4], [9, "Settler", 5]]};   // เผ่า → [[index, ชื่อ, ความเร็ว x1]]
+const MAP_TRIBE={1:'Romans',2:'Teutons',3:'Gauls',6:'Egyptians',7:'Huns',8:'Spartans',9:'Vikings',5:'Natars'};
+const ART={'3':3,'2':2,'1.5':1.5,'0.67':2/3,'0.5':0.5,'0.33':1/3};
+const BOOTS=[0,25,35,50,60,75,85,100,125];
+const SCOUT_U={Romans:3,Teutons:3,Gauls:2,Egyptians:3,Huns:2,Vikings:3,Spartans:1};   // ตำแหน่งตัวสอดของแต่ละเผ่า (0 = หน่วยแรก)
+const MIRROR='https://raw.githubusercontent.com/nawatnawat/Travian_Resource_Manager/mapdata/';   // สำเนา map.sql (workflow ของแอปหลัก)
+const MIRROR_API='https://api.github.com/repos/nawatnawat/Travian_Resource_Manager/commits?sha=mapdata&per_page=1';
+const FB_CONFIG={apiKey:"AIzaSyCHSWFwOZYoCGRV0i-Ai_LHBxD36AYkSRM",authDomain:"travian-manager-c3b13.firebaseapp.com",projectId:"travian-manager-c3b13",storageBucket:"travian-manager-c3b13.firebasestorage.app",messagingSenderId:"271817675852",appId:"1:271817675852:web:7e74d03b957f40a14890e9"};
+const COL='scoutops';   // Firestore: ปฏิบัติการที่ออนไลน์
+const LSK='scout-app';   // localStorage ของแอปนี้ (โดเมนเดียวกับแอปหลัก จึงขึ้นต้นด้วย scout- ทั้งหมด)
+/* ============ ตัวช่วย ============ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('en-US');
+function toast(m,ms){const e=$('toast');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',ms||3500);}
+const pad=n=>String(n).padStart(2,'0');
+// เวลา = นาฬิกาของเกม (เก็บเป็นสตริง YYYY-MM-DDTHH:MM:SS · คำนวณแบบ UTC ภายใน ไม่ให้เขตเวลาเครื่องมายุ่ง)
+const parseDT=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(String(s||''));return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)):null;};
+const toDT=ms=>{const d=new Date(ms);return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds());};
+const MON='ม.ค.,ก.พ.,มี.ค.,เม.ย.,พ.ค.,มิ.ย.,ก.ค.,ส.ค.,ก.ย.,ต.ค.,พ.ย.,ธ.ค.'.split(',');
+const clock=ms=>{const d=new Date(ms);return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds());};
+const MON_EN='Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec'.split(',');
+const dmy=ms=>{const d=new Date(ms);return d.getUTCDate()+' '+(LANG()==='en'?MON_EN:MON)[d.getUTCMonth()];};
+const hms=sec=>{sec=Math.max(0,Math.round(sec));return Math.floor(sec/3600)+':'+pad(Math.floor(sec%3600/60))+':'+pad(sec%60);};
+const gameNow=()=>Date.now()-new Date().getTimezoneOffset()*60000;   // นาฬิกาเกม = นาฬิกาเครื่องนี้ (เวลาในเกมตั้งให้ตรงกับเวลาเครื่อง)
+/* ============ ที่เก็บในเครื่อง ============ */
+let L=null;
+// โปรไฟล์ (L.profs) = เซิร์ฟเวอร์ที่เล่น: เก็บค่าเซิร์ฟ (s) · ในโปรไฟล์มีตารางสอดได้หลายกลุ่ม (L.ops ที่ pid ตรงกัน)
+// ตารางสอดทุกอันในโปรไฟล์ใช้ s ก้อนเดียวกับโปรไฟล์ (o.s === prof.s) และส่ง s ไปกับข้อมูลออนไลน์ให้ทีม
+const defS=()=>({host:'',size:200,round:true,speed:2,tz:-new Date().getTimezoneOffset()/60});
+let _uid=0;const uid=p=>p+Date.now().toString(36)+(++_uid);
+function newOpData(name,pid){const pr=(L&&L.profs&&(L.profs.find(x=>x.id===(pid||L.pcur))||L.profs[0]))||null;
+  return {id:uid('l'),pid:pr?pr.id:'',name:name||'ตารางสอด 1',online:null,s:pr?pr.s:defS(),A:[],B:[],marks:{},nextId:1};}
+const prof=()=>L.profs.find(p=>p.id===L.pcur)||L.profs[0];
+const profOf=o=>L.profs.find(p=>p.id===o.pid);
+const profOps=pid=>L.ops.filter(o=>o.pid===(pid||L.pcur));
+function profName(p){return p.name||p.s.host||'เซิร์ฟเวอร์';}
+function linkProfs(){ // ผูก o.s กับ s ของโปรไฟล์ · ย้ายตารางที่ไม่มีโปรไฟล์
+  L.ops.forEach(o=>{let p=profOf(o);if(!p){const h=hostOf(o.s&&o.s.host);p=(h&&L.profs.find(x=>hostOf(x.s.host)===h))||null;
+      if(!p){p={id:uid('p'),name:h||'',s:Object.assign(defS(),o.s||{})};L.profs.push(p);}o.pid=p.id;}o.s=p.s;});}
+function adoptS(o,rs){ // ค่าเซิร์ฟจากข้อมูลทีม: เซิร์ฟเดียวกัน = อัปเดตโปรไฟล์นั้น · คนละเซิร์ฟ = ย้ายไปโปรไฟล์ของเซิร์ฟนั้น (สร้างใหม่ถ้าไม่มี)
+  if(!rs||typeof rs!=='object')return;const h=hostOf(rs.host);let p=profOf(o);
+  if(h&&(!p||hostOf(p.s.host)!==h)){const q=L.profs.find(x=>hostOf(x.s.host)===h);
+    if(q)p=q;else if(p&&!hostOf(p.s.host)&&profOps(p.id).length<=1)p.name=p.name||h;else{p={id:uid('p'),name:h,s:Object.assign(defS(),rs)};L.profs.push(p);}
+    o.pid=p.id;}
+  if(!p){p={id:uid('p'),name:h,s:defS()};L.profs.push(p);o.pid=p.id;}
+  ['host','size','round','speed','tz'].forEach(k=>{if(rs[k]!==undefined)p.s[k]=rs[k];});o.s=p.s;}
+function load(){try{L=JSON.parse(localStorage.getItem(LSK)||'null');}catch(e){}if(!L||!Array.isArray(L.ops))L={ops:[],cur:null};
+  if(!Array.isArray(L.profs))L.profs=[];linkProfs();
+  if(!L.profs.length)L.profs.push({id:uid('p'),name:'',s:defS()});
+  if(!L.profs.find(p=>p.id===L.pcur)){const c=L.ops.find(o=>o.id===L.cur);L.pcur=c?c.pid:L.profs[0].id;}
+  if(!profOps().length)L.ops.push(newOpData());
+  if(!profOps().find(o=>o.id===L.cur))L.cur=profOps()[0].id;
+  L.me=Object.assign({player:'',count:10,ts:0,tribe:'',pick:{},src:{},q:{}},L.me||{});delete L.me.margin;L.tab=['send','help'].includes(L.tab)?L.tab:'table';}   // L.me = ค่าส่วนตัว (ไม่แชร์): ชื่อผู้เล่นของฉัน จำนวนตัวสอด ลาน เผื่อเวลา
+function save(){try{localStorage.setItem(LSK,JSON.stringify(L));}catch(e){}}
+const op=()=>L&&L.ops.find(o=>o.id===L.cur);
+const canEdit=()=>{const o=op();return !o.online||o.online.role!=='view';};
+/* ============ map.sql (ใช้ที่เก็บร่วมกับแอปหลัก: localStorage "travian-mapsql:<เซิร์ฟเวอร์>") ============ */
+const MP={host:'',rows:null,at:0,xy:null,loading:false};
+function hostOf(u){u=String(u||'').trim();if(!u)return '';if(!/^https?:\/\//i.test(u))u='https://'+u;try{return new URL(u).host.toLowerCase();}catch(e){return '';}}
+function decHtml(s){if(!/&[#a-z0-9]+;/i.test(s))return s;const e=document.createElement('textarea');e.innerHTML=s;return e.value;}
+function parseMapSql(t){const out=[],n=t.length;let i=0;
+  while(true){const k=t.indexOf('VALUES',i);if(k<0)break;i=k+6;
+    while(i<n){while(i<n&&(t[i]===','||t[i]===' '||t[i]==='\n'||t[i]==='\r'||t[i]==='\t'))i++;if(t[i]!=='(')break;i++;const v=[];
+      while(i<n){while(t[i]===' ')i++;let x;
+        if(t[i]==="'"||t[i]==='"'){const q=t[i++];let s='';while(i<n){if(t[i]==='\\'){s+=t[i+1];i+=2;}else if(t[i]===q&&t[i+1]===q){s+=q;i+=2;}else if(t[i]===q){i++;break;}else s+=t[i++];}x=s;}
+        else{let s='';while(i<n&&t[i]!==','&&t[i]!==')')s+=t[i++];x=s.trim();if(x==='NULL')x=null;}
+        v.push(x);while(t[i]===' ')i++;if(t[i]===','){i++;continue;}if(t[i]===')'){i++;break;}break;}
+      if(v.length>=11)out.push({vid:+v[4],x:+v[1],y:+v[2],tribe:+v[3],name:decHtml(v[5]||''),uid:+v[6],player:decHtml(v[7]||''),aid:+v[8],ally:decHtml(v[9]||''),pop:+v[10]||0,capital:String(v[12]).toUpperCase()==='TRUE'});}}
+  return out;}
+const pack=rows=>rows.map(r=>[r.vid,r.x,r.y,r.tribe,r.name,r.uid,r.player,r.aid,r.ally,r.pop,r.capital?1:0]);   // รูปแบบเดียวกับแอปหลัก
+const unpack=a=>a.map(v=>({vid:v[0],x:v[1],y:v[2],tribe:v[3],name:v[4],uid:v[5],player:v[6],aid:v[7],ally:v[8],pop:v[9],capital:!!v[10]}));
+function mpBoundary(now){const d=new Date(now);let b=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),0,10,0);if(now<b)b-=86400000;return b;}
+function mpSet(rows,at){MP.rows=rows;MP.at=at;MP.xy=new Map(rows.map(r=>[r.x+'|'+r.y,r]));}
+async function mpEnsure(force){
+  const h=hostOf(op().s.host);if(!h){MP.host='';MP.rows=null;return;}
+  if(MP.host!==h){MP.host=h;MP.rows=null;try{const o=JSON.parse(localStorage.getItem('travian-mapsql:'+h)||'null');if(o&&Array.isArray(o.rows))mpSet(unpack(o.rows),o.at||0);}catch(e){}}
+  if(!force&&MP.rows&&MP.at>=mpBoundary(Date.now()))return;
+  if(MP.loading)return;MP.loading=true;render();
+  try{
+    let at=0;try{const r=await fetch(MIRROR_API,{cache:'no-store'});if(r.ok){const j=await r.json();at=Date.parse(j[0].commit.committer.date)||0;}}catch(e){}
+    if(force||!MP.rows||!at||at>MP.at){
+      const r=await fetch(MIRROR+h+'.sql',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
+      const rows=parseMapSql(await r.text());if(!rows.length)throw new Error('empty');
+      at=at||Date.now();if(hostOf(op().s.host)===h){mpSet(rows,at);try{localStorage.setItem('travian-mapsql:'+h,JSON.stringify({at,src:'github',rows:pack(rows)}));}catch(e){}}
+    }
+  }catch(e){if(!MP.rows)toast('⚠ โหลด map.sql ของ '+h+' ไม่ได้ ('+(e.message||e)+') · ใส่พิกัดเองได้',5000);}
+  MP.loading=false;render();
+}
+const vill=(x,y)=>MP.xy?MP.xy.get(x+'|'+y)||null:null;
+function findV(q){if(!MP.rows)return [];q=String(q||'').trim().toLowerCase().replace(/[−–]/g,'-');if(!q)return [];
+  const out=[],seen=new Set(),c=/^\(?\s*(-?\d+)\s*(?:([|/,\s])\s*(-?\d*))?\s*\)?$/.exec(q);
+  if(c){const a=c[1],b=c[3]||'',T=[];for(const r of MP.rows){const xs=String(r.x),ys=String(r.y);let sc=-1;
+      if(c[2]){if(xs===a&&ys.startsWith(b))sc=ys===b?0:1;}else if(xs===a||ys===a)sc=0;else if(xs.startsWith(a)||ys.startsWith(a))sc=1;if(sc>=0)T.push([sc,r]);}
+    T.sort((p,s)=>p[0]-s[0]||p[1].x-s[1].x||p[1].y-s[1].y);T.forEach(([,r])=>{out.push(r);seen.add(r);});}
+  const tk=q.split(/\s+/),N=[];
+  for(const r of MP.rows){if(seen.has(r))continue;const n=r.name.toLowerCase(),p=r.player.toLowerCase(),al=(r.ally||'').toLowerCase();let sc=0,ok=true;
+    for(const w of tk){const s=(p===w||al===w||n===w)?0:(p.startsWith(w)||al.startsWith(w)||n.startsWith(w))?1:(p.includes(w)||al.includes(w)||n.includes(w))?2:-1;if(s<0){ok=false;break;}sc+=s;}if(ok)N.push([sc,r]);}
+  N.sort((x,y)=>x[0]-y[0]||y[1].pop-x[1].pop);N.forEach(([,r])=>out.push(r));return out;}
+/* ============ คำนวณเวลาเดิน (สูตรเดียวกับแอปหลัก / kirilloid) ============ */
+function dist(a,b){const s=op().s;let dx=Math.abs(a.x-b.x),dy=Math.abs(a.y-b.y);if(s.round){const n=2*s.size+1;dx=Math.min(dx,n-dx);dy=Math.min(dy,n-dy);}return Math.hypot(dx,dy);}   // โลกกลม: คิดข้ามขอบแยกแกน X/Y
+function troopH(d,v,ts,boots){const b=(ts>0?20*ts:0)+(+boots||0);if(!(b>0)||d<=20)return d/v;return 20/v+(d-20)/(v*(1+b/100));}   // 20 ช่องแรกปกติ · ที่เกินเร็วขึ้นตาม TS(+20%/เลเวล) + รองเท้า
+const spdMul=()=>(+op().s.speed||1)>=2?2:1;
+function speedOf(a){if(+a.sp>0)return +a.sp;const u=(UNITS[a.tribe]||[]).find(u=>u[0]===+a.unit);return u?u[2]*spdMul():0;}   // ใส่ความเร็วเอง = ความเร็วสุดท้าย (รวมความเร็วเซิร์ฟแล้ว)
+function travelSec(a,b){const v=speedOf(a)*(ART[a.art]||1);if(!(v>0)||a.x===''||b.x==='')return null;return Math.round(troopH(dist(a,b),v,+a.ts||0,+a.boots||0)*3600);}
+function launchMs(a,b){const eta=parseDT(b.eta),t=travelSec(a,b);return eta==null||t==null?null:eta-t*1000;}
+/* ============ การแก้ข้อมูล ============ */
+function nid(){const o=op();return o.nextId++;}
+function change(){save();if(op().online)olSchedule();render();}
+function addA(r){if(!canEdit())return;const o=op(),tribe=r?MAP_TRIBE[r.tribe]:'Teutons';
+  o.A.push({id:nid(),name:r?r.name:'',player:r?r.player:'',ally:r?r.ally:'',x:r?r.x:'',y:r?r.y:'',tribe:UNITS[tribe]?tribe:'Teutons',unit:7,sp:'',ts:0,boots:0,art:''});change();}
+function addB(r){if(!canEdit())return;const o=op(),last=o.B[o.B.length-1],gn=gameNow();
+  o.B.push({id:nid(),name:r?r.name:'',player:r?r.player:'',x:r?r.x:'',y:r?r.y:'',eta:last?last.eta:toDT(Math.ceil((gn+3600000)/3600000)*3600000)});change();}
+function setF(side,id,k,v,re){if(!canEdit())return;const it=op()[side].find(x=>x.id===id);if(!it)return;
+  if(k==='x'||k==='y')v=v===''?'':Math.round(+v);if(k==='ts')v=Math.max(0,Math.min(20,+v||0));
+  it[k]=v;if((k==='x'||k==='y')&&it.x!==''&&it.y!==''){const r=vill(it.x,it.y);if(r){it.name=it.name||r.name;it.player=r.player;it.ally=r.ally;if(side==='A'&&MAP_TRIBE[r.tribe]&&UNITS[MAP_TRIBE[r.tribe]])it.tribe=MAP_TRIBE[r.tribe];}}
+  if(k==='tribe'){const L2=UNITS[v]||[];if(!L2.some(u=>u[0]===+it.unit))it.unit=7;}
+  save();if(op().online)olSchedule();if(re!==false)render();else renderMatrix();}
+function delV(side,id){if(!canEdit())return;const o=op();o[side]=o[side].filter(x=>x.id!==id);
+  Object.keys(o.marks).filter(k=>side==='A'?k.startsWith(id+'_'):k.endsWith('_'+id)).forEach(k=>olMark(k,null,true));change();}   // ลบสถานะของช่องที่เกี่ยวข้องด้วย
+function moveV(side,id,d){if(!canEdit())return;const a=op()[side],i=a.findIndex(x=>x.id===id),j=i+d;if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];change();}
+// สถานะของแต่ละช่อง (ศัตรู × หมู่บ้านเรา) เก็บที่ marks["<idศัตรู>_<idหมู่บ้านเรา>"]: safe = ปลอดภัย · gone = ทัพหาย มีโอกาสโดน · (ไม่มี) = ยังไม่มีข้อมูล
+const mk=(a,b)=>a+'_'+b;
+function mark(a,b,s){if(!canEdit())return;const id=mk(a,b),cur=op().marks[id];
+  const v=cur&&cur.s===s?null:{s,at:gameNow(),by:shortMe()};olMark(id,v);}
+function markTime(id){if(!canEdit())return;const m=op().marks[id];if(!m)return;
+  mOpen(`<h4>⏱ เวลาที่สอด</h4><p class="note">ใช้เวลาตามรายงานการสอดในเกม (นาฬิกาเกม)</p><input id="mt" type="datetime-local" step="1" value="${toDT(m.at)}" style="width:100%">`,
+    [{t:'บันทึก',c:'pri',f:()=>{const v=parseDT($('mt').value);if(v!=null)olMark(id,Object.assign({},m,{at:v}));}},{t:'ยกเลิก'}]);}
+
+/* ============ ภาษา TH/EN + ธีม (แบบเดียวกับแอปหลัก) ============ */
+// แปลข้อความไทยบนหน้าจอเป็นอังกฤษด้วยพจนานุกรม (I18N) · คู่มือ/Change Log เขียนแยก 2 ภาษาเอง (data-noi18n)
+const I18N={"แอปบอกเวลากดปล่อยให้ตัวสอดไปถึงหลังเวลาที่ศัตรูต้องปล่อยทัพ พร้อมนับถอยหลังและลิงก์ส่งในเกม": "the app shows when to press so scouts land at the enemy's launch time, with a countdown and an in-game send link", "ลิงก์เปิดหน้าส่งทหารของหมู่บ้านนั้นในเกม ใส่ตัวสอดให้แล้ว": "The link opens that village's send-troops page in the game with scouts filled in", "ทุกคนในทีมเห็นหมู่บ้าน เวลา และสถานะการสอดเดียวกันทันที": "everyone on the team sees the same villages, times and scout status instantly", "ก่อน แล้วจะขึ้นปฏิบัติการนี้ออนไลน์และเชิญทีมด้วย": "first, then you can put this operation online and invite your team by", "หรือพิมพ์พิกัดต้นทางเองในแต่ละแถว แล้วเลือกเผ่า": "or type source coordinates in each row and choose your tribe", "ใส่หมู่บ้านศัตรูและหมู่บ้านเราที่โดนตีในแท็บ": "Add enemy villages and our targeted villages in the tab", "ตัวสอดถึงตรงกับเวลาที่ศัตรูต้องปล่อยทัพพอดี": "Scouts land exactly at the enemy's launch time", "ลบออกจากคลาวด์ด้วย ทุกคนในทีมจะไม่เห็นอีก": "Also delete from the cloud — nobody on the team will see it again", "ใส่ชื่อผู้เล่นด้านบน หรือพิมพ์พิกัดต้นทาง": "Enter your player name above, or type source coordinates", "ต้องกดยืนยันในเกมเอง และเลือกสอดทรัพยากร": "You still confirm in the game, and choose scouting resources", "ใช้เมื่อพิมพ์พิกัดเอง โดยไม่มีหมู่บ้านใน": "Used when typing coordinates that have no village in", "กดเวลาใต้ปุ่มเพื่อแก้เป็นเวลาในรายงานสอด": "click the time under the buttons to change it to the scout report time", "ใส่ชื่อผู้เล่น เพื่อเลือกหมู่บ้านต้นทาง": "Enter your player name to pick source villages", "ใส่หลายคนได้ คั่นด้วยเว้นวรรคหรือจุลภาค": "Several allowed, separated by spaces or commas", "คุณไม่ได้อยู่ในทีมของปฏิบัติการนี้แล้ว": "You are no longer on this operation's team", "ใช้ได้กับหมู่บ้านในบัญชีของคุณเท่านั้น": "Works only for villages in your own account", "ใส่เซิร์ฟเวอร์ด้านบนก่อน เพื่อค้นหาจาก": "Enter the server above first to search", "ที่ใส่ไว้แล้วจะเห็นปฏิบัติการนี้เอง": "entered here, and they will see this operation", "ใส่เซิร์ฟเวอร์เพื่อค้นหาหมู่บ้านจาก": "Enter the server to search villages from", "สอดหลังเวลาปล่อยแล้วทัพยังอยู่บ้าน": "scouted after launch time and the army is still home", "ใช้ฉบับล่าสุดแล้ว กรุณาแก้อีกครั้ง": "Loaded the latest version — please edit again", "ตารางบอกเวลาที่ศัตรูต้องปล่อยทัพ": "The table shows when the enemy must launch", "สอดหลังเวลานี้ ถ้าทัพยังอยู่บ้าน": "scout after this time; if the army is still home", "ไม่มีสิทธิ์ หรือปฏิบัติการถูกลบ": "No permission, or the operation was deleted", "หมู่บ้านเลยเวลาปล่อยทุกช่องแล้ว": "villages are past every launch time", "ของหมู่บ้านเราหมู่บ้านไหน หรือ": "of which of our villages, or", "เลือกหมู่บ้านเราที่จะส่งตัวสอด": "pick our village to send scouts from", "เวลาปล่อยล่าสุดของหมู่บ้านนั้น": "that village's latest launch time", "หมู่บ้านศัตรูที่สงสัยว่ามาตี": "suspected enemy attacker villages", "ให้ทีมเปิดแอปแล้วล็อกอินด้วย": "Have the team open the app and sign in with", "เพิ่มลบหมู่บ้านและกดสถานะได้": "can add/remove villages and set status", "ใช้บอกว่าเลยเวลาแล้วหรือยัง": "used to tell whether a time has passed", "ใช้เวลาตามรายงานการสอดในเกม": "use the time from the in-game scout report", "หลังกี่วินาที ปรับตอนกดเอง": "after by some seconds, adjust when you press", "หัวหน้าลบปฏิบัติการนี้แล้ว": "The leader deleted this operation", "ไม่มีเวลาปล่อยที่ยังไม่ถึง": "No launch times still ahead", "คนที่ได้รับเชิญล็อกอินด้วย": "Invited people sign in with", "เลือกเวลาปล่อยที่ยังไม่ถึง": "pick a launch time still ahead", "ขึ้นออนไลน์และเชิญทีมด้วย": "go online and invite the team by", "เลือกเผ่าของเราด้านบนก่อน": "Choose your tribe above first", "แสดงเฉพาะเวลาที่ยังไม่ถึง": "only times still ahead", "ข้อมูลยังอยู่ในเครื่องนี้": "The data is still on this device", "การป้องกันได้ในหน้ายืนยัน": "or defences on the confirm page", "ให้ทุกคนเห็นสถานะเดียวกัน": "so everyone sees the same status", "เวลาที่ศัตรูต้องปล่อยพอดี": "exactly the enemy's launch time", "เวลาที่ศัตรูต้องปล่อยทัพ": "When the enemy must launch", "ปฏิบัติการนี้ออนไลน์อยู่": "This operation is online", "ใส่เองถ้ารู้ความเร็วจริง": "enter it if you know the real speed", "ยังโหลดระบบล็อกอินไม่ได้": "Sign-in system not loaded yet", "สำหรับศัตรูแต่ละหมู่บ้าน": "for each enemy village", "ไม่ใช่ตัวตีหมู่บ้านนั้น": "not attacking that village", "ตัวสอดถึงพร้อมเวลาปล่อย": "scouts land at launch time", "และหมู่บ้านเราที่โดนตี": "and our targeted villages", "ไม่พบหมู่บ้านที่ตรงกัน": "No matching village", "เก็บข้อมูลไว้ในเครื่อง": "Data kept on this device", "ปุ่มส่งจะแสดงเมื่อรู้": "The send button shows when we know the", "เขตเวลาของนาฬิกาในเกม": "Time zone of the in-game clock", "เรียงตามเวลาที่ต้องกด": "sorted by press time", "รวมความเร็วเซิร์ฟแล้ว": "server speed included", "ใส่เซิร์ฟเวอร์ด้านบน": "enter the server above", "หมู่บ้านศัตรูที่มาตี": "Enemy attacker villages", "แล้วค้นหาหมู่บ้านจาก": "then search villages from", "ต้องเปิดจากลิงก์เว็บ": "must be opened from the web link", "บันทึกสถานะไม่สำเร็จ": "Failed to save status", "ส่งจากหมู่บ้านของเรา": "Send from our village", "ตารางเวลาปล่อย ก่อน": "Launch table first", "ตั้งค่าตัวสอดของฉัน": "My scout settings", "หมู่บ้านเราที่โดนตี": "Our targeted villages", "ลบบนคลาวด์ไม่สำเร็จ": "Failed to delete in the cloud", "พิมพ์เพิ่มเพื่อกรอง": "type more to filter", "อ่านข้อมูลทีมไม่ได้": "Can't read team data", "เก็บเฉพาะเครื่องนี้": "kept on this device only", "หมู่บ้านเลยเวลาแล้ว": "villages past their time", "หน่วยช้าสุดที่สงสัย": "suspected slowest unit", "อ่านรายการทีมไม่ได้": "Can't read the team list", "ลบเฉพาะในเครื่องคุณ": "Delete only on your device", "ลบออนไลน์ไม่สำเร็จ": "Failed to delete online", "ในแต่ละช่องเวลา กด": "In each time cell, press", "ยังไม่ถึงเวลาปล่อย": "launch time not reached yet", "มีปฏิบัติการของทีม": "Team operations available", "กดปุ่มเดิมอีกครั้ง": "press the same button again", "ไปสอดหมู่บ้านศัตรู": "scout the enemy village", "ดูสถานะในแท็บตาราง": "see status in the table tab", "โหลดรายการทีมแล้ว": "Team list loaded", "มีหมู่บ้านนี้แล้ว": "This village is already added", "ชื่อผู้เล่นของฉัน": "My player name", "ทัพหาย มีโอกาสโดน": "army gone — may be hit", "สถานะของแต่ละช่อง": "Status of each cell", "โหลดรายการทีมใหม่": "Reload team list", "หรือชื่อหมู่บ้าน": "or village name", "ล็อกอินไม่สำเร็จ": "Sign-in failed", "คัดลอกข้อความนี้": "Copy this text", "ใช้หน่วยที่เลือก": "use the selected unit", "ข้อมูลใหญ่เกินไป": "Data too large", "ค้นหาหมู่บ้านเรา": "Search our villages", "ปฏิบัติการของทีม": "Team operations", "ใส่หมู่บ้านศัตรู": "Add enemy villages", "อย่างน้อยฝั่งละ": "at least per side:", "บันทึกไม่สำเร็จ": "Save failed", "หรือใส่พิกัดเอง": "or enter coordinates manually", "อีเมลไม่ถูกต้อง": "Invalid email", "ผู้เล่นปรับก่อน": "players adjust earlier", "ช่องจะเปลี่ยนสี": "the cell changes color", "ขึ้นออนไลน์แล้ว": "Now online", "มีคนแก้พร้อมกัน": "Someone edited at the same time", "ยึดเวลาปล่อยของ": "Use launch time of", "คิวปล่อยตัวสอด": "Scout send queue", "คุณเป็นหัวหน้า": "You are the leader", "ตารางเวลาปล่อย": "Launch table", "หมู่บ้านต้นทาง": "source village", "ปฏิบัติการใหม่": "New operation", "ใส่พิกัดเองได้": "coordinates can be entered manually", "อยากให้ถึงก่อน": "Want them to land earlier", "ปล่อยตอนนี้ถึง": "send now, lands", "ยังไม่มีข้อมูล": "no data yet", "ซิงค์ไม่สำเร็จ": "Sync failed", "หมู่บ้านของคุณ": "Your villages", "หลังเวลาในช่อง": "after the time in the cell", "เหลือในเครื่อง": "kept on this device", "พิกัดที่พิมพ์": "Typed coordinates", "โปรแกรมสอดแนม": "Scout Program", "ของทีมยังอยู่": "the team's copy remains", "บันทึกทีมแล้ว": "Team saved", "ลบออนไลน์แล้ว": "Deleted online", "ออกจากทีมแล้ว": "Left the team", "เช่น ป้องกัน": "e.g. Defense", "ไม่พบผู้เล่น": "Player not found", "กู้คืนไม่ได้": "cannot be undone", "ลบปฏิบัติการ": "Delete operation", "หรือความเร็ว": "or speed", "ดูอย่างเดียว": "view only", "สิทธิ์ของคุณ": "your role", "หน่วยช้าสุด": "Slowest unit", "เวลาทัพเข้า": "Army arrival time", "ล็อกอินด้วย": "Sign in with", "อาร์ติแฟกต์": "Artifact", "ซิงค์ไม่ได้": "Can't sync", "คัดลอกไปแชต": "Copy to chat", "เข้าสู่ระบบ": "Sign in", "หมู่บ้านเรา": "Our village", "ทุกหมู่บ้าน": "All villages", "เซิร์ฟเวอร์": "Server", "ขึ้นออนไลน์": "Go online", "จำนวนตัวสอด": "Scouts", "ปล่อยตัวสอด": "Send scouts", "เปลี่ยนชื่อ": "Rename", "เผ่าของเรา": "Our tribe", "ส่งแบบปล้น": "sent as raid", "พิมพ์พิกัด": "Type coordinates", "ซิงค์ทันที": "live sync", "เวลาที่สอด": "Scout time", "ออกจากระบบ": "Sign out", "มีโอกาสโดน": "may be hit", "แชร์ให้ทีม": "Share with team", "ค้นหาศัตรู": "Search enemy", "ควรสอดหลัง": "Scout after", "กดอีกครั้ง": "press again", "ปฏิบัติการ": "Operation", "สอดได้แล้ว": "can scout now", "คัดลอกแล้ว": "Copied", "ศัตรูปล่อย": "Enemy launches", "ลบออนไลน์": "Delete online", "เลยมาแล้ว": "Late by", "เชิญเพิ่ม": "Invite more", "ชื่อในเกม": "in-game name", "อัปเดตจาก": "updated from", "ออกจากทีม": "Leave team", "ไม่มีชื่อ": "no name", "ส่งตัวสอด": "Send scouts", "นาฬิกาเกม": "Game clock", "จะลองใหม่": "will retry", "ที่ใส่ไว้": "entered", "กำลังโหลด": "Loading", "ตัวสอดถึง": "scouts land", "ยังไม่มี": "None yet", "พันธมิตร": "Alliance", "เช่น แคต": "e.g. catapults", "ความเร็ว": "Speed", "แก้ไขได้": "can edit", "เวลาเดิน": "Travel time", "ค้นหาจาก": "search from", "เวลาเข้า": "Arrival", "หมู่บ้าน": "villages", "แชร์กับ": "shared with", "เวลาเกม": "Game time", "ออนไลน์": "Online", "หัวหน้า": "Leader", "เก็บที่": "stored at", "แชร์โดย": "Shared by", "ไม่แสดง": "hidden", "สอดหลัง": "scout after", "ทัพเข้า": "Arrives", "ปลอดภัย": "Safe", "รองเท้า": "Boots", "วิธีใช้": "How to use", "กดปล่อย": "Press at", "ตั้งค่า": "Settings", "หลังเอง": "later themselves", "ไม่แชร์": "not shared", "ไม่มีใน": "not in", "ผู้เล่น": "Player", "ของเรา": "our", "เหลือง": "yellow", "ด้านบน": "above", "ไม่ได้": "failed", "แก้ได้": "can edit", "บันทึก": "Save", "ตัวสอด": "Scout", "ยกเลิก": "Cancel", "หรือกด": "or press", "ทัพหาย": "Army gone", "ต้องมี": "needs", "เอาออก": "Remove", "แผนที่": "Map", "ล่าสุด": "latest", "ใส่เอง": "Add manually", "สอดแนม": "scouting", "รายการ": "list", "ทีมของ": "team of", "เขียว": "green", "สร้าง": "Create", "ไม่พบ": "Not found", "ปล่อย": "Launch", "ศัตรู": "Enemy", "ไม่มี": "none", "มีใน": "in", "ช่อง": "fields", "เดิน": "travel", "หรือ": "or", "เผ่า": "Tribe", "ระยะ": "Distance", "ตรวจ": "Check", "ว่าง": "empty", "เข้า": "in", "ชื่อ": "Name", "ก่อน": "first", "แท็บ": "tab", "ขึ้น": "shows", "โหลด": "Load", "ซ้าย": "Left", "ล้าง": "Clear", "ใส่": "Enter", "โลก": "World", "ทีม": "Team", "ได้": "ok", "แดง": "red", "ปิด": "Close", "ตาม": "by", "อีก": "in", "ขวา": "Right", "แบน": "Flat", "กลม": "Round", "ของ": "of", "ฉัน": "me", "สอด": "Scout", "ลาน": "TS", "คน": "people", "ใน": "in", "ลง": "down", "มี": "has", "ชม": "h", "ลบ": "Delete", "คู่มือ": "Manual", "ลานประลอง": "Tournament Square", "ที่หัวเว็บ": "In the header", "เลือก": "choose", "และใส่": "and enter", "เซิร์ฟเวอร์ที่เล่น": "the server you play", "แยกตารางสอดได้หลายกลุ่ม กด": "Split scout tables into several groups: press", "ตารางนี้ออนไลน์อยู่": "This table is online", "มีตารางสอดของทีม": "Team scout tables", "หัวหน้าลบตารางนี้แล้ว": "The leader deleted this table", "หรือตารางถูกลบ": "or the table was deleted", "แล้วจะขึ้นตารางนี้ออนไลน์และเชิญทีมด้วย": ", then you can put this table online and invite your team by", "ตารางสอดของทีม": "Team scout table", "คุณไม่ได้อยู่ในทีมของตารางนี้แล้ว": "You are no longer on this table's team", "โปรไฟล์": "Profile", "ตารางสอด": "Scout table", "เพิ่ม": "Add", "เพิ่มตารางสอด": "Add scout table", "ตารางสอด 1": "Scout table 1", "ลบตารางนี้": "Delete this table", "เปลี่ยนชื่อตาราง": "Rename table", "เพิ่มโปรไฟล์": "Add profile", "ลบโปรไฟล์": "Delete profile", "ชื่อโปรไฟล์": "Profile name", "เปลี่ยนชื่อโปรไฟล์": "Rename profile", "โปรไฟล์ = เซิร์ฟเวอร์ที่เล่น": "Profile = the server you play", "ใช้ชื่อเซิร์ฟเวอร์": "use the server name", "ในโปรไฟล์มีตารางสอดได้หลายกลุ่ม": "each profile can hold several scout tables", "ตารางออนไลน์": "online tables", "ยังอยู่บนคลาวด์": "remain in the cloud", "ลบออนไลน์ได้จากปุ่ม": "delete online with the", "ของแต่ละตาราง": "button of each table", "ลบตารางสอดในโปรไฟล์นี้": "Delete the scout tables in this profile", "ตาราง": "tables", "ออกจากเครื่องนี้": "from this device", "เซิร์ฟเวอร์ เช่น": "Server, e.g.", "โลกกลม = เดินข้ามขอบไปโผล่อีกฝั่งได้": "Round world = walk off one edge and appear on the other side", "โลกแบน = มีขอบ": "Flat world = hard edges", "โหลด map.sql ใหม่": "Reload map.sql", "ยังไม่มี map.sql": "no map.sql yet", "กำลังโหลด map.sql…": "Loading map.sql…", "ของหมู่บ้านต้นทาง": "of the source village", "ลานประลองของเรา": "Our Tournament Square", "ดูคู่มือเต็ม": "Full manual"};
+const THRUN=/[฀-๿](?:[฀-๿ ]*[฀-๿])?/g;
+const LANG=()=>(L&&L.lang)||'th';
+const TL=(th,en)=>LANG()==='en'?en:th;
+function trText(s){if(!/[฀-๿]/.test(s))return s;return s.replace(THRUN,m=>I18N[m]!==undefined?I18N[m]:m.split(' ').map(p=>I18N[p]!==undefined?I18N[p]:p).join(' '));}
+const I18N_ATTR=['placeholder','title','aria-label'];
+let _i18nBusy=false,_i18nObs=null;
+function i18nNode(root){
+  if(LANG()!=='en'||!root)return;
+  const skip=n=>{for(let e=n.parentElement;e;e=e.parentElement){if(e.hasAttribute&&e.hasAttribute('data-noi18n'))return true;const tg=e.tagName;if(tg==='SCRIPT'||tg==='STYLE'||tg==='TEXTAREA'||tg==='TITLE')return true;}return false;};
+  const doText=n=>{const v=n.nodeValue;if(!v||!/[฀-๿]/.test(v)||skip(n))return;if(n._th===undefined)n._th=v;n.nodeValue=trText(v);};
+  const doEl=el=>{if(el.closest&&el.closest('[data-noi18n]'))return;I18N_ATTR.forEach(a=>{const v=el.getAttribute&&el.getAttribute(a);if(v&&/[฀-๿]/.test(v)){if(!el.hasAttribute('data-th-'+a))el.setAttribute('data-th-'+a,v);el.setAttribute(a,trText(v));}});};
+  if(root.nodeType===3){doText(root);return;}
+  if(root.nodeType!==1&&root.nodeType!==9)return;
+  if(root.nodeType===1)doEl(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n;
+  while((n=w.nextNode())){if(n.nodeType===3)doText(n);else doEl(n);}
+}
+function i18nRun(nodes){if(_i18nBusy)return;_i18nBusy=true;try{nodes.forEach(i18nNode);}finally{if(_i18nObs)_i18nObs.takeRecords();_i18nBusy=false;}}
+function i18nRestore(){_i18nBusy=true;
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let n;
+  while((n=w.nextNode())){if(n.nodeType===3){if(n._th!==undefined){n.nodeValue=n._th;delete n._th;}}else I18N_ATTR.forEach(a=>{const k='data-th-'+a;if(n.hasAttribute(k)){n.setAttribute(a,n.getAttribute(k));n.removeAttribute(k);}});}
+  if(_i18nObs)_i18nObs.takeRecords();_i18nBusy=false;}
+function themeCur(){return L&&L.theme?L.theme:(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function themeUI(){const t=themeCur();if(L&&L.theme)document.documentElement.setAttribute('data-theme',L.theme);else document.documentElement.removeAttribute('data-theme');
+  ['light','dark'].forEach(x=>{const b=$('th-'+x);if(b)b.classList.toggle('on',x===t);});}
+function setTheme(t){L.theme=t==='dark'?'dark':'light';save();themeUI();}
+function langUI(){const l=LANG();document.documentElement.lang=l;document.title=(l==='en'?'Travian Scout':'โปรแกรมสอดแนม · Travian Scout')+' v'+APP_V;['th','en'].forEach(x=>{const b=$('lang-'+x);if(b)b.classList.toggle('on',x===l);});}
+function setLang(l){L.lang=l==='en'?'en':'th';save();if(L.lang==='th'){i18nRestore();render();}else{render();i18nRun([document.body]);}langUI();}
+function i18nInit(){
+  _i18nObs=new MutationObserver(recs=>{if(_i18nBusy||LANG()!=='en')return;const ns=[];recs.forEach(r=>{if(r.type==='characterData'||r.type==='attributes')ns.push(r.target);else r.addedNodes.forEach(x=>ns.push(x));});i18nRun(ns);});
+  _i18nObs.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:I18N_ATTR});
+  langUI();themeUI();if(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').addEventListener)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',themeUI);if(LANG()==='en')i18nRun([document.body]);}
+
+/* ============ 📖 คู่มือ + Change Log ============ */
+const APP_V='0.4.1';
+// Change Log: 1 รายการต่อสายเวอร์ชัน (x.y) · [เลขล่าสุด, ข้อความ .0 TH, EN, ช่วงรุ่นย่อย, สรุปรุ่นย่อย TH, EN]
+const CHANGELOG=[["0.4.1", "🗂️ โปรไฟล์ = เซิร์ฟเวอร์ที่เล่น อยู่บนสุดของหัวเว็บ พร้อมตั้งค่าเซิร์ฟ (เซิร์ฟเวอร์ ความเร็ว แผนที่ โลกกลม/แบน เวลาเกม) ย้ายขึ้นไปไว้ที่หัวเว็บ · ในแต่ละโปรไฟล์มีตารางสอดได้หลายกลุ่ม กด ＋ เพิ่ม · ข้อมูลเดิมแยกเป็นโปรไฟล์ตามเซิร์ฟเวอร์ให้เอง\n📖 หน้าคู่มือการใช้งาน (แท็บ 📖 คู่มือ) และ Change Log · กดเลขเวอร์ชันที่หัวเว็บเพื่อเปิด Change Log\n☀️/🌙 ธีมสว่าง/มืด และ TH/EN สลับภาษาได้ที่หัวเว็บ แบบเดียวกับแอปหลัก", "🗂️ Profile = the server you play, at the top of the header, with the server settings (server, speed, map, round/flat world, game time) moved into the header · each profile can hold several scout tables, press ＋ Add · existing data is split into profiles by server automatically\n📖 User manual page (📖 Manual tab) and Change Log · click the version number in the header to open the Change Log\n☀️/🌙 light/dark theme and TH/EN language switch in the header, same as the main app", ".1", "เอาช่องเวลาเกม GMT ออก · ใช้นาฬิกาของเครื่องเป็นเวลาเกมแทน (ตั้งเขตเวลาในเกมให้ตรงกับเครื่อง)", "Removed the game time GMT box · the device clock is used as game time (set the in-game time zone to match your device)"], ["0.3.1", "🕵️ แท็บใหม่ ปล่อยตัวสอด: คิวหมู่บ้านศัตรูที่ยังไม่ถึงเวลาปล่อย เรียงตามเวลาที่ต้องกด · เลือกหมู่บ้านเราที่จะส่ง (จาก map.sql ตามชื่อผู้เล่น เรียงจากใกล้สุด) · บอกเวลากดปล่อย นับถอยหลัง เปลี่ยนสีเมื่อใกล้ถึง · ปุ่มส่งตัวสอดเปิดหน้าส่งทหารในเกมพร้อมใส่ตัวสอดให้", "🕵️ New Send scouts tab: queue of enemy villages whose launch time is still ahead, sorted by press time · pick our village to send from (from map.sql by player name, nearest first) · shows press time with a countdown that changes color as it gets close · the Send scouts button opens the in-game send page with scouts filled in", ".1", "ตัวสอดถึงตรงกับเวลาที่ศัตรูต้องปล่อยพอดี (เอาช่องเผื่อเวลาออก ผู้เล่นปรับก่อน/หลังเอง) · พิมพ์พิกัด/ชื่อเพื่อกรองหมู่บ้านต้นทางได้ · พิกัดที่ไม่มีใน map.sql ยังคำนวณเวลาได้แต่ไม่มีปุ่มส่ง · เลือกเผ่าเองได้เมื่อไม่มีชื่อผู้เล่น · แก้: นับถอยหลังทุกวินาทีทำให้ช่องเลือกที่เปิดอยู่ปิดเอง", "Scouts land exactly at the enemy's launch time (margin box removed, players adjust earlier/later themselves) · type coordinates/name to filter source villages · coordinates not in map.sql still get times but no send button · choose your tribe when no player name is set · fix: the per-second countdown closed open dropdowns"], ["0.2.0", "สถานะต่อช่องเวลา: 🟡 ยังไม่มีข้อมูล · 🟢 ปลอดภัย · 🔴 ทัพหาย มีโอกาสโดน · กดเวลาใต้ปุ่มเพื่อแก้เป็นเวลาในรายงานสอด\n🌐 ขึ้นออนไลน์และเชิญทีมด้วย Gmail (✏️ สอด/แก้ได้ · 👁 ดูอย่างเดียว) ซิงค์ทันที · ออกจากทีม / ลบออนไลน์", "Per-cell status: 🟡 no data · 🟢 safe · 🔴 army gone, may be hit · click the time under the buttons to set the scout report time\n🌐 Go online and invite the team by Gmail (✏️ scout/edit · 👁 view only) with live sync · leave team / delete online", "", "", ""], ["0.1.0", "เวอร์ชันแรก: แยกจากแอปหลักเป็นโปรแกรมสอดแนมสำหรับวางแผนป้องกัน · หลายปฏิบัติการ · ซ้ายหมู่บ้านศัตรู ขวาหมู่บ้านเราที่โดนตี (ค้นหาจาก map.sql ร่วมกับแอปหลัก หรือใส่เอง) · ตารางเวลาที่ศัตรูต้องปล่อยทัพ = เวลาเข้า − เวลาเดิน · คิดลาน รองเท้า อาร์ติแฟกต์ ความเร็วเซิร์ฟ โลกกลม/แบน · คัดลอกไปแชต", "First version: split from the main app as a scout program for defense planning · multiple operations · enemy villages on the left, our targeted villages on the right (search the map.sql shared with the main app, or enter manually) · table of enemy launch times = arrival − travel time · counts TS, boots, artifacts, server speed, round/flat world · copy to chat", "", "", ""]];
+function openLog(){setTab('help');setTimeout(()=>helpGo('h-log'),30);}
+function helpGo(id){const e=$(id);if(e){e.open=true;e.scrollIntoView({behavior:'smooth',block:'start'});}}
+function helpData(){const T=TL;return [["h-quick",T("🚀 เริ่มต้นใช้งาน","🚀 Quick start"),T("<ol><li>ที่หัวเว็บ ใส่ <b>เซิร์ฟเวอร์</b> ของโปรไฟล์ เช่น <code>ts21.x2.asia.travian.com</code> แอปจะโหลด map.sql ให้เอง แล้วตั้ง <b>ความเร็ว</b>, <b>ขนาดแผนที่</b>, <b>โลกกลม/แบน</b> ให้ตรงกับเซิร์ฟ</li>\n<li>แท็บ <b>📊 ตารางเวลาปล่อย</b>: ซ้ายใส่หมู่บ้านศัตรูที่สงสัยว่ามาตี ขวาใส่หมู่บ้านเราที่โดนตีพร้อม <b>เวลาทัพเข้า</b></li>\n<li>ตารางตรงกลางบอก <b>เวลาที่ศัตรูต้องปล่อยทัพ</b> ไปสอดหลังเวลานั้น ถ้าทัพยังอยู่บ้าน = ไม่ใช่ตัวตีหมู่บ้านนั้น</li>\n<li>กด ✓ / ✗ ในแต่ละช่องเพื่อบอกผลการสอด</li>\n<li>แท็บ <b>🕵️ ปล่อยตัวสอด</b>: แอปบอกว่าต้องกดส่งตัวสอดจากหมู่บ้านไหนกี่โมง พร้อมนับถอยหลังและปุ่มส่งในเกม</li>\n<li>กด ＋ เพิ่ม ข้าง 🗂️ ตารางสอด เพื่อแยกตารางเป็นหลายกลุ่ม · กด 👥 เพื่อขึ้นออนไลน์และเชิญทีม</li></ol>","<ol><li>In the header, enter the profile's <b>server</b>, e.g. <code>ts21.x2.asia.travian.com</code>; the app loads map.sql by itself. Set <b>speed</b>, <b>map size</b>, <b>round/flat world</b> to match the server</li>\n<li><b>📊 Launch table</b> tab: enemy villages you suspect on the left, our targeted villages with their <b>arrival time</b> on the right</li>\n<li>The table shows <b>when the enemy must launch</b>. Scout after that time; if the army is still home, that village is not the attacker</li>\n<li>Press ✓ / ✗ in each cell to record the scout result</li>\n<li><b>🕵️ Send scouts</b> tab: shows which village to send scouts from and when, with a countdown and an in-game send button</li>\n<li>Press ＋ Add next to 🗂️ Scout tables to split into several groups · press 👥 to go online and invite your team</li></ol>")],["h-ops",T("🗂️ โปรไฟล์และตารางสอด","🗂️ Profiles and scout tables"),T("<ul><li><b>โปรไฟล์</b> (กล่องบนสุดของหัวเว็บ) = เซิร์ฟเวอร์ที่เล่น · <b>＋</b> เพิ่มโปรไฟล์ · <b>✏️</b> เปลี่ยนชื่อ · <b>🗑️</b> ลบ</li>\n<li>ค่าของเซิร์ฟอยู่ที่หัวเว็บใต้โปรไฟล์: <b>เซิร์ฟเวอร์</b>, <b>ความเร็ว</b>, <b>แผนที่ ±</b>, <b>โลกกลม/แบน</b> และสถานะ map.sql · ใช้กับทุกตารางในโปรไฟล์นั้น</li>\n<li><b>🗂️ ตารางสอด</b>: ในโปรไฟล์มีได้หลายกลุ่ม (เช่น แยกตามพันธมิตรที่มาตี หรือตามวัน) กด <b>＋ เพิ่ม</b> · กดชื่อเพื่อสลับ · ✏️ เปลี่ยนชื่อ · 👥 ออนไลน์/แชร์ · 🗑️ ลบ</li>\n<li>แต่ละตารางแชร์ออนไลน์แยกกันได้ ตารางที่ทีมแชร์มาจะเข้าโปรไฟล์ของเซิร์ฟเวอร์นั้นเอง (ถ้ายังไม่มีจะสร้างให้)</li>\n<li>ตารางที่ยังไม่ออนไลน์เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น</li></ul>","<ul><li><b>Profile</b> (top box in the header) = the server you play · <b>＋</b> add profile · <b>✏️</b> rename · <b>🗑️</b> delete</li>\n<li>Server settings are in the header under the profile: <b>server</b>, <b>speed</b>, <b>map ±</b>, <b>round/flat world</b> and map.sql status · they apply to every table in that profile</li>\n<li><b>🗂️ Scout tables</b>: a profile can hold several groups (e.g. one per attacking alliance or per day). Press <b>＋ Add</b> · click a name to switch · ✏️ rename · 👥 online/share · 🗑️ delete</li>\n<li>Each table is shared online separately; tables shared by your team go into the profile of their server automatically (created if missing)</li>\n<li>Tables that are not online are stored only in this browser</li></ul>")],["h-table",T("📊 ตารางเวลาปล่อย","📊 Launch table"),T("<h4>⚔️ หมู่บ้านศัตรูที่มาตี (ซ้าย)</h4><ul><li>ค้นหาจาก map.sql ได้ทั้ง พันธมิตร · ผู้เล่น · ชื่อหมู่บ้าน · พิกัด (พิมพ์บางส่วนได้ เช่น <code>-114</code>) หรือกด ＋ ใส่เอง</li>\n<li>ตั้ง <b>เผ่า</b>, <b>หน่วยช้าสุด</b> ที่สงสัย (เช่น แคต), <b>ลาน (TS)</b>, <b>รองเท้า</b>, <b>อาร์ติแฟกต์</b> · ช่องความเร็วใส่เองได้ถ้ารู้ความเร็วจริง (ช่อง/ชม. รวมความเร็วเซิร์ฟแล้ว)</li></ul>\n<h4>🛡️ หมู่บ้านเราที่โดนตี (ขวา)</h4><ul><li>ใส่หมู่บ้านและ <b>เวลาทัพเข้า</b> ตามที่เห็นในเกม (เวลาเกม)</li></ul>\n<h4>🕒 ตาราง</h4><ul><li>แต่ละช่อง = เวลาที่ศัตรูหมู่บ้านนั้นต้องปล่อยทัพ เพื่อให้ถึงหมู่บ้านเราตามเวลาเข้า</li>\n<li>ไปสอดหลังเวลานั้น แล้วกด <b>✓ ปลอดภัย</b> (ทัพยังอยู่บ้าน) หรือ <b>✗ ทัพหาย</b> (มีโอกาสโดน) · กดปุ่มเดิมอีกครั้งเพื่อล้าง</li>\n<li>สีช่อง: 🟡 ยังไม่มีข้อมูล · 🟢 ปลอดภัย · 🔴 ทัพหาย</li>\n<li>กดเวลาใต้ปุ่มเพื่อแก้เป็นเวลาในรายงานการสอด</li>\n<li><b>📋 คัดลอกไปแชต</b> คัดลอกตารางเป็นข้อความไปวางในแชตทีม</li></ul>","<h4>⚔️ Enemy attacker villages (left)</h4><ul><li>Search map.sql by alliance · player · village name · coordinates (partial works, e.g. <code>-114</code>) or press ＋ to add manually</li>\n<li>Set <b>tribe</b>, suspected <b>slowest unit</b> (e.g. catapults), <b>TS</b>, <b>boots</b>, <b>artifact</b> · type a speed if you know the real one (fields/h, server speed included)</li></ul>\n<h4>🛡️ Our targeted villages (right)</h4><ul><li>Enter the village and the <b>arrival time</b> seen in the game (game time)</li></ul>\n<h4>🕒 Table</h4><ul><li>Each cell = when that enemy village must launch to arrive at our village on time</li>\n<li>Scout after that time, then press <b>✓ Safe</b> (army still home) or <b>✗ Army gone</b> (may be hit) · press the same button again to clear</li>\n<li>Cell colors: 🟡 no data · 🟢 safe · 🔴 army gone</li>\n<li>Click the time under the buttons to change it to the scout report time</li>\n<li><b>📋 Copy to chat</b> copies the table as text for your team chat</li></ul>")],["h-send",T("🕵️ ปล่อยตัวสอด","🕵️ Send scouts"),T("<h4>ตั้งค่าตัวสอดของฉัน (เก็บเฉพาะเครื่องนี้ ไม่แชร์)</h4><ul><li><b>ชื่อผู้เล่นของฉัน</b>: ชื่อในเกมตาม map.sql แอปดึงหมู่บ้านของคุณมาให้เลือก และรู้เผ่าเอง</li>\n<li><b>จำนวนตัวสอด</b> และ <b>ลาน (TS)</b> ของเรา · ถ้าไม่ใส่ชื่อผู้เล่น ให้เลือก <b>เผ่าของเรา</b></li></ul>\n<h4>คิวปล่อยตัวสอด</h4><ul><li>แสดงเฉพาะหมู่บ้านศัตรูที่ยังไม่ถึงเวลาปล่อย เรียงตามเวลาที่ต้องกด</li>\n<li><b>ยึดเวลาปล่อยของ</b>: ทุกหมู่บ้าน (เวลาล่าสุด) หรือเลือกหมู่บ้านเราหมู่บ้านเดียว</li>\n<li><b>ตัวสอดถึงตรงกับเวลาที่ศัตรูต้องปล่อยพอดี</b> อยากให้ถึงก่อนหรือหลังกี่วินาที ปรับตอนกดเอง</li>\n<li><b>ส่งจากหมู่บ้านของเรา</b>: เลือกหมู่บ้านใกล้สุดให้ก่อน เปลี่ยนได้ · พิมพ์พิกัด <code>x/y</code> หรือชื่อหมู่บ้านในช่อง 🔍 เพื่อกรอง</li>\n<li>พิมพ์พิกัดที่ไม่มีใน map.sql ได้ แอปคำนวณเวลาให้ แต่ไม่มีปุ่มส่ง (ไม่รู้ ID หมู่บ้าน)</li>\n<li><b>กดปล่อย</b> = เวลาถึง − เวลาเดินของตัวสอด · นับถอยหลังเป็นสีเหลืองเมื่อเหลือไม่ถึง 30 นาที และกรอบแดงเมื่อไม่ถึง 5 นาที · ถ้าเลยแล้วบอกว่าเลยมากี่นาทีและถ้าปล่อยตอนนี้จะถึงกี่โมง</li>\n<li><b>🕵️ ส่งตัวสอด ↗</b> เปิดหน้าส่งทหารในเกม ใส่พิกัดและตัวสอดให้แล้ว (ส่งแบบปล้น = สอดแนม) ต้องกดยืนยันในเกมเอง และเลือกสอดทรัพยากร/การป้องกันในหน้ายืนยัน · ใช้ได้กับหมู่บ้านในบัญชีที่ล็อกอินอยู่เท่านั้น</li></ul>","<h4>My scout settings (this device only, not shared)</h4><ul><li><b>My player name</b>: your in-game name as in map.sql. The app lists your villages and knows your tribe</li>\n<li>Number of <b>scouts</b> and our <b>TS</b> · without a player name, choose <b>our tribe</b></li></ul>\n<h4>Scout send queue</h4><ul><li>Only enemy villages whose launch time is still ahead, sorted by press time</li>\n<li><b>Use launch time of</b>: all villages (latest time) or a single one of our villages</li>\n<li><b>Scouts land exactly at the enemy's launch time.</b> If you want them earlier or later, adjust when you press</li>\n<li><b>Send from our village</b>: the nearest is picked first and can be changed · type <code>x/y</code> or a village name in the 🔍 box to filter</li>\n<li>Coordinates not in map.sql are allowed: you get the times, but no send button (village ID unknown)</li>\n<li><b>Press at</b> = arrival − scout travel time · the countdown turns yellow under 30 minutes and the card gets a red frame under 5 minutes · when late it shows by how much and when scouts would land if sent now</li>\n<li><b>🕵️ Send scouts ↗</b> opens the in-game send page with coordinates and scouts filled in (sent as raid = scouting). Confirm in the game and choose resources/defences on the confirm page · works only for villages of the account you are signed in to</li></ul>")],["h-online",T("🌐 ออนไลน์และทีม","🌐 Online and team"),T("<ul><li>กด <b>🔑 เข้าสู่ระบบ Google</b> แล้วกด <b>👥</b> (แถวตารางสอด) เพื่อขึ้นตารางนี้ออนไลน์ คุณจะเป็น <b>หัวหน้า</b></li>\n<li>ใส่ Gmail ของทีม (หลายคนได้ คั่นด้วยเว้นวรรคหรือจุลภาค) เลือกสิทธิ์ <b>✏️ สอด/แก้ได้</b> หรือ <b>👁 ดูอย่างเดียว</b></li>\n<li>ทีมเปิดแอปแล้วล็อกอินด้วย Gmail นั้น จะเห็นตารางเอง ทุกคนเห็นหมู่บ้าน เวลา และสถานะเดียวกันทันที</li>\n<li>หัวหน้าลบตารางออนไลน์ได้ · สมาชิกออกจากทีมได้ (ข้อมูลยังอยู่ในเครื่อง)</li>\n<li>ค่าในแท็บปล่อยตัวสอด (ชื่อผู้เล่น จำนวนตัวสอด ลาน) เป็นของแต่ละคน ไม่แชร์</li></ul>","<ul><li>Press <b>🔑 Sign in with Google</b>, then <b>👥</b> (scout table row) to put this table online; you become the <b>leader</b></li>\n<li>Enter the team's Gmail addresses (several allowed, separated by spaces or commas) and choose <b>✏️ scout/edit</b> or <b>👁 view only</b></li>\n<li>Team members open the app and sign in with that Gmail to see the table; everyone sees the same villages, times and status instantly</li>\n<li>The leader can delete the online table · members can leave the team (data stays on their device)</li>\n<li>Send scouts settings (player name, scout count, TS) are personal and not shared</li></ul>")],["h-map",T("🗺️ map.sql","🗺️ map.sql"),T("<ul><li>map.sql คือไฟล์ข้อมูลหมู่บ้านทั้งเซิร์ฟเวอร์ที่ Travian อัปเดตวันละครั้ง</li>\n<li>แอปโหลดจากสำเนาบน GitHub ของแอปหลัก (Travian Resource Manager) และใช้ข้อมูลที่โหลดไว้ร่วมกับแอปหลักในเบราว์เซอร์เดียวกัน</li>\n<li>กด ⟳ ข้าง map.sql เพื่อโหลดใหม่ · ต้องเปิดแอปจากลิงก์เว็บ (ไม่ใช่ไฟล์ในเครื่อง) ถึงจะโหลดได้</li></ul>","<ul><li>map.sql is the village data file of the whole server that Travian updates once a day</li>\n<li>The app loads it from the main app's GitHub copy (Travian Resource Manager) and shares the loaded data with the main app in the same browser</li>\n<li>Press ⟳ next to map.sql to reload · the app must be opened from the web link (not a local file) to load it</li></ul>")],["h-calc",T("🧮 การคำนวณ","🧮 How it's calculated"),T("<ul><li>ระยะทาง = √(dx² + dy²) · โลกกลม: แต่ละแกนเดินข้ามขอบได้ (ใช้ระยะที่สั้นกว่า)</li>\n<li>20 ช่องแรกเดินความเร็วปกติ ส่วนที่เกิน 20 ช่องคูณ (1 + (20×ลาน + รองเท้า)/100)</li>\n<li>อาร์ติแฟกต์ความเร็วคูณทั้งเส้นทาง · ความเร็วเซิร์ฟ x2 และ x3 ทหารเดินเร็ว ×2</li>\n<li>เวลาที่ศัตรูต้องปล่อย = เวลาทัพเข้า − เวลาเดิน · เวลากดส่งตัวสอด = เวลานั้น − เวลาเดินของตัวสอด</li>\n<li>เวลาทั้งหมดเป็นเวลาเกม แอปใช้นาฬิกาของเครื่องเป็นเวลาเกม เพื่อบอกว่าเลยเวลาแล้วหรือยังและนับถอยหลัง</li></ul>","<ul><li>Distance = √(dx² + dy²) · round world: each axis can wrap around the edge (shorter distance is used)</li>\n<li>The first 20 fields at normal speed; distance beyond 20 fields is multiplied by (1 + (20×TS + boots)/100)</li>\n<li>Speed artifacts multiply the whole trip · on x2 and x3 servers troops move ×2</li>\n<li>Enemy launch time = arrival − travel time · scout press time = that time − scout travel time</li>\n<li>All times are game time; the app uses the device clock as game time to tell whether a time has passed and for countdowns</li></ul>")],["h-faq",T("❓ ปัญหาที่พบบ่อย","❓ FAQ"),T("<ul><li><b>ไม่พบผู้เล่นใน map.sql</b>: พิมพ์ชื่อให้ตรงทุกตัวอักษร หรือ map.sql ยังไม่อัปเดต (ผู้เล่นใหม่/เปลี่ยนชื่อ) · พิมพ์พิกัดต้นทางเองแทนได้</li>\n<li><b>ลิงก์ส่งเปิดแล้วไม่ใช่หมู่บ้านเรา</b>: ลิงก์ใช้ได้เฉพาะหมู่บ้านในบัญชีที่ล็อกอินในเบราว์เซอร์นั้น</li>\n<li><b>เวลาเพี้ยนเป็นชั่วโมง</b>: ตั้งเขตเวลาในเกม (โปรไฟล์ → การตั้งค่า) ให้ตรงกับเวลาเครื่อง เช่น ไทย UTC+7</li>\n<li><b>ไม่เห็นตารางของทีม</b>: ล็อกอินด้วย Gmail ที่หัวหน้าเชิญ แล้วกดโหลดรายการทีมใหม่</li></ul>","<ul><li><b>Player not found in map.sql</b>: type the name exactly, or map.sql isn't updated yet (new player/renamed) · you can type source coordinates instead</li>\n<li><b>The send link opens a village that isn't ours</b>: links work only for villages of the account signed in in that browser</li>\n<li><b>Times off by hours</b>: set the in-game time zone (profile → settings) to match your device, e.g. UTC+7 for Thailand</li>\n<li><b>Team table not visible</b>: sign in with the Gmail the leader invited, then reload the team list</li></ul>")],["h-log","📝 Change Log",logHTML()]];}
+function helpHTML(){const H=helpData(),en=LANG()==='en';
+  return `<div data-noi18n><section class="box"><h3>📖 ${en?'User manual':'คู่มือการใช้งาน'} ${en?'Travian Scout':'โปรแกรมสอดแนม'} <span class="tag">v${APP_V}</span>
+    <span style="margin-left:auto;display:flex;gap:6px"><button onclick="document.querySelectorAll('.hp details').forEach(d=>d.open=true)">${en?'Expand all':'กางทั้งหมด'}</button><button onclick="document.querySelectorAll('.hp details').forEach(d=>d.open=false)">${en?'Collapse all':'พับทั้งหมด'}</button></span></h3>
+    <div class="toc">${H.map(h=>`<button onclick="helpGo('${h[0]}')">${h[1]}</button>`).join('')}</div></section>
+    <div class="hp">${H.map((h,i)=>`<details class="box ${i===0?'qs':''}" id="${h[0]}" ${i===0?'open':''}><summary>${h[1]}</summary><div class="hbody">${h[2]}</div></details>`).join('')}</div></div>`;}
+function logHTML(){const en=LANG()==='en';
+  return `<p class="note">${en?'Version numbers: last = bug fix/tweak · middle = new feature · first = major change · one entry per version line: if it had minor updates the latest number is shown with "(summary .1–.N)"':'เลขเวอร์ชัน: เลขท้าย = แก้บั๊ก/ปรับเล็กน้อย · เลขกลาง = เพิ่มฟังก์ชัน · เลขหน้า = เปลี่ยนโครงสร้างใหญ่ · แต่ละสายเวอร์ชันแสดง 1 รายการ ถ้ามีรุ่นย่อยจะแสดงเลขล่าสุดพร้อม "(สรุป .1–.N)"'}</p>
+  <div class="clog">${CHANGELOG.map((c,i)=>`<div class="cl"><span class="clv"><b class="${i===0?'new':''}">v${c[0]}</b>${c[3]?` <small class="cls">(${en?'summary':'สรุป'} ${c[3]})</small>`:''}</span><span>${esc(en?c[2]:c[1]).replace(/\n/g,'<br>')}${c[3]?'<br><b>'+(en?'Summary ':'สรุป ')+c[3]+':</b> '+esc(en?c[5]:c[4]).replace(/\n/g,'<br>'):''}</span></div>`).join('')}</div>`;}
+/* ============ หน้าจอ ============ */
+function render(){
+  if(!L)return;const o=op();
+  if(o.pid!==L.pcur){L.pcur=o.pid;}
+  $('prsel').innerHTML=L.profs.map(p=>`<option value="${esc(p.id)}" ${p.id===L.pcur?'selected':''}>${esc(profName(p))}${p.name&&p.s.host&&p.name!==p.s.host?' · '+esc(p.s.host):''}</option>`).join('');
+  renderHset();
+  renderUser();
+  const ro=!canEdit(),s=o.s;
+  const bar=o.online?`<div class="bar ${ro?'ro':''}">🌐 ออนไลน์ · ${o.online.role==='owner'?'คุณเป็นหัวหน้า · แชร์กับ '+(o.online.n||0)+' คน':'แชร์โดย <b>'+esc(o.online.ownerName||'')+'</b> · '+(ro?'👁 ดูอย่างเดียว':'✏️ แก้ไขได้')} · ซิงค์ทันที <button class="lnk" style="margin-left:auto" onclick="shareDlg()">ตั้งค่า</button></div>`:'';
+  const dis=ro?'disabled':'';
+  const tabs=`<div class="tabs"><button class="${L.tab==='table'?'on':''}" onclick="setTab('table')">📊 ตารางเวลาปล่อย</button><button class="${L.tab==='send'?'on':''}" onclick="setTab('send')">🕵️ ปล่อยตัวสอด</button><button class="${L.tab==='help'?'on':''}" onclick="setTab('help')">📖 คู่มือ</button></div>`;
+  if(L.tab==='help'){$('app').innerHTML=tabs+helpHTML();langUI();return;}
+  const os=profOps(),grp=`<div class="grp"><span class="gl">🗂️ ตารางสอด</span>${os.map(x=>`<button class="gt ${x.id===o.id?'on':''}" onclick="selOp('${esc(x.id)}')">${esc(x.name)}${x.online?' 🌐':''}</button>`).join('')}<button onclick="newOp()" title="เพิ่มตารางสอด">＋ เพิ่ม</button>
+    <span class="gact"><button onclick="renameOp()" title="เปลี่ยนชื่อตาราง">✏️</button><button onclick="shareDlg()" title="ออนไลน์ / แชร์ให้ทีม">👥</button><button onclick="delOp()" title="ลบตารางนี้">🗑️</button></span></div>`;
+  $('app').innerHTML=tabs+grp+bar+`
+  ${L.tab==='send'?sendHTML():`<div class="cols">
+    <section class="box side"><h3>⚔️ หมู่บ้านศัตรูที่มาตี <span class="cnt note">${o.A.length} หมู่บ้าน</span></h3>
+      ${ro?'':`<div class="addrow">${pickHTML('A','ค้นหาศัตรู: พันธมิตร · ผู้เล่น · หมู่บ้าน · X/Y')}<button onclick="addA()">＋ ใส่เอง</button></div>`}
+      <div class="vl">${o.A.map(a=>aCard(a,dis)).join('')||'<div class="note empty">ยังไม่มี · ค้นหาจาก map.sql หรือกด ＋ ใส่เอง</div>'}</div></section>
+    <section class="box side"><h3>🛡️ หมู่บ้านเราที่โดนตี <span class="cnt note">${o.B.length} หมู่บ้าน</span></h3>
+      ${ro?'':`<div class="addrow">${pickHTML('B','ค้นหาหมู่บ้านเรา: ผู้เล่น · หมู่บ้าน · X/Y')}<button onclick="addB()">＋ ใส่เอง</button></div>`}
+      <div class="vl">${o.B.map(b=>bCard(b,dis)).join('')||'<div class="note empty">ยังไม่มี · ค้นหาจาก map.sql หรือกด ＋ ใส่เอง</div>'}</div></section>
+  </div>
+  <section class="box"><h3>🕒 เวลาที่ศัตรูต้องปล่อยทัพ <span class="note" style="font-weight:400">= เวลาเข้า − เวลาเดิน · สอดหลังเวลานี้ ถ้าทัพยังอยู่บ้าน = ไม่ใช่ตัวตีหมู่บ้านนั้น</span>
+    <button class="lnk" style="margin-left:auto" onclick="copyAll()">📋 คัดลอกไปแชต</button></h3><div id="mxbox"></div></section>
+  <section class="box help"><h3>❓ วิธีใช้ <button class="lnk" style="margin-left:auto" onclick="setTab('help')">📖 ดูคู่มือเต็ม</button></h3><ol class="note">
+    <li>ที่หัวเว็บ: เลือก <b>โปรไฟล์</b> (เซิร์ฟเวอร์ที่เล่น) และใส่ <b>เซิร์ฟเวอร์</b> แล้วค้นหาหมู่บ้านจาก map.sql (หรือใส่พิกัดเอง)</li>
+    <li>ซ้าย: หมู่บ้านศัตรูที่สงสัยว่ามาตี + ลานประลอง (TS) + หน่วยช้าสุดที่สงสัย (เช่น แคต) · ขวา: หมู่บ้านเราที่โดนตี + เวลาทัพเข้า</li>
+    <li>ตารางบอกเวลาที่ศัตรูต้องปล่อยทัพ · ไปสอดหมู่บ้านศัตรู <b>หลังเวลาในช่อง "ควรสอดหลัง"</b></li>
+    <li>ในแต่ละช่องเวลา กด <b>✓ ปลอดภัย</b> (สอดหลังเวลาปล่อยแล้วทัพยังอยู่บ้าน) หรือ <b>✗ ทัพหาย</b> (มีโอกาสโดน) · ช่องจะเปลี่ยนสี: เหลือง = ยังไม่มีข้อมูล · เขียว = ปลอดภัย · แดง = ทัพหาย · กดเวลาใต้ปุ่มเพื่อแก้เป็นเวลาในรายงานสอด</li>
+    <li>🗂️ แยกตารางสอดได้หลายกลุ่ม กด ＋ เพิ่ม · 👥 ขึ้นออนไลน์และเชิญทีมด้วย Gmail ให้ทุกคนเห็นสถานะเดียวกัน</li>
+    <li>🕵️ แท็บ <b>ปล่อยตัวสอด</b>: เลือกหมู่บ้านเราที่จะส่งตัวสอด · แอปบอกเวลากดปล่อยให้ตัวสอดไปถึงหลังเวลาที่ศัตรูต้องปล่อยทัพ พร้อมนับถอยหลังและลิงก์ส่งในเกม</li></ol></section>`}`;
+  if(L.tab==='send')renderSend();else renderMatrix();
+}
+function renderHset(){const e=$('hset');if(!e)return;const s=prof().s;
+  e.innerHTML=`<label>🌐 เซิร์ฟเวอร์ <input id="host" value="${esc(s.host)}" placeholder="ts21.x2.asia.travian.com" style="width:220px;cursor:text" onchange="setS('host',this.value)"></label>
+    <label>⚡ ความเร็ว <select onchange="setS('speed',+this.value)">${[1,2,3].map(v=>`<option value="${v}" ${+s.speed===v?'selected':''}>x${v}</option>`).join('')}</select></label>
+    <label>🗺️ แผนที่ ±<select onchange="setS('size',+this.value)">${[200,250,400].map(v=>`<option ${s.size===v?'selected':''}>${v}</option>`).join('')}</select></label>
+    <label title="โลกกลม = เดินข้ามขอบไปโผล่อีกฝั่งได้ · โลกแบน = มีขอบ">🌍 โลก <span class="hseg"><button class="${s.round?'on':''}" onclick="setS('round',true)">กลม</button><button class="${s.round?'':'on'}" onclick="setS('round',false)">แบน</button></span></label>
+    <span class="hnote">${MP.loading?'⏳ กำลังโหลด map.sql…':MP.rows?'map.sql '+fmt(MP.rows.length)+' หมู่บ้าน · '+new Date(MP.at).toLocaleString(LANG()==='en'?'en-GB':'th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' <button onclick="mpEnsure(true)" title="โหลด map.sql ใหม่">⟳</button>':s.host?'ยังไม่มี map.sql':'ใส่เซิร์ฟเวอร์เพื่อค้นหาหมู่บ้านจาก map.sql'}</span>`;}
+function setTab(k){L.tab=k;save();render();}
+/* ============ 🕵️ ปล่อยตัวสอด ============ */
+// สำหรับศัตรูแต่ละหมู่บ้าน: เลือกเวลาปล่อยที่ยังไม่ถึง (ของหมู่บ้านเราหมู่บ้านไหน หรือ "ล่าสุด") → ตัวสอดถึง = เวลาที่ศัตรูต้องปล่อยพอดี (ผู้เล่นปรับก่อน/หลังเอง)
+// เลือกหมู่บ้านต้นทางของเรา (จาก map.sql ตามชื่อผู้เล่นของฉัน) → กดปล่อย = เวลาถึง − เวลาเดินของตัวสอด · มีลิงก์ส่งในเกม
+const meKey=()=>op().id;
+function myVills(){const me=String(L.me.player||'').trim().toLowerCase();if(!me||!MP.rows)return [];return MP.rows.filter(r=>r.player.toLowerCase()===me).sort((a,b)=>b.pop-a.pop);}
+function myTribe(){const V=myVills();return V.length?MAP_TRIBE[V[0].tribe]:(L.me.tribe||'');}
+function scoutOf(r){const tr=r.tn||MAP_TRIBE[r.tribe],U=UNITS[tr]||[],u=U.find(x=>x[0]===SCOUT_U[tr]);return u?{tribe:tr,i:u[0],n:u[1],v:u[2]*spdMul()}:null;}
+function scoutSec(src,a){const s=scoutOf(src);if(!s||a.x==='')return null;return Math.round(troopH(dist(src,a),s.v,+L.me.ts||0,0)*3600);}
+function sendLink(src,a){const h=hostOf(op().s.host),s=scoutOf(src);if(!h||!src.vid||!s)return '';
+  return `https://${h}/build.php?newdid=${src.vid}&id=39&tt=2&x=${a.x}&y=${a.y}&troop%5Bt${s.i+1}%5D=${Math.max(1,+L.me.count||1)}&c=3&gid=16&eventType=4`;}
+function parseXY(q){q=String(q||'').replace(/[\u202a-\u202e\u200e\u200f]/g,'').replace(/[−–]/g,'-').trim();const m=q.match(/^\(?\s*(-?\d+)\s*[\/|,\s]\s*(-?\d+)\s*\)?$/);return m?{x:+m[1],y:+m[2]}:null;}
+function srcList(a,V,q){q=String(q||'').trim();let L2=V;
+  if(q){const ql=q.toLowerCase().replace(/[−–]/g,'-'),xy=parseXY(q);
+    L2=V.filter(r=>r.name.toLowerCase().includes(ql)||(r.x+'/'+r.y).includes(ql.replace(/[|,\s]+/g,'/')));
+    if(xy&&!L2.some(r=>r.x===xy.x&&r.y===xy.y)){const row=MP.rows&&MP.rows.find(r=>r.x===xy.x&&r.y===xy.y);
+      L2=[row?Object.assign({},row,{tn:myTribe()||MAP_TRIBE[row.tribe]}):{x:xy.x,y:xy.y,name:'('+xy.x+'/'+xy.y+')',vid:0,tn:myTribe(),custom:1}];}}
+  return L2;}
+function tasks(){const o=op(),now=gameNow(),V=myVills(),pk=(L.me.pick[meKey()]||{}),sp=(L.me.src[meKey()]||{}),out=[];let hidden=0;
+  o.A.forEach(a=>{const opts=o.B.map(b=>({b,t:launchMs(a,b)})).filter(x=>x.t!=null&&x.t>now).sort((p,q)=>p.t-q.t);
+    if(!opts.length){if(o.B.some(b=>launchMs(a,b)!=null))hidden++;return;}
+    const last=opts[opts.length-1],sel=pk[a.id],tg=sel==null||sel==='all'?{b:null,t:last.t}:(opts.find(x=>String(x.b.id)===String(sel))||{b:null,t:last.t});
+    const arrive=tg.t,q=(L.me.q[meKey()]||{})[a.id]||'';
+    const cand=srcList(a,V,q).map(r=>{const tr=scoutSec(r,a);return tr==null?null:{r,tr,press:arrive-tr*1000};}).filter(Boolean).sort((p,q)=>p.tr-q.tr);
+    const src=cand.find(c=>String(c.r.vid)===String(sp[a.id]))||cand[0]||null;
+    out.push({a,opts,tg,arrive,cand,src,q,press:src?src.press:null});});
+  out.sort((p,q)=>(p.press==null)-(q.press==null)||(p.press||0)-(q.press||0));return {out,hidden};}
+function sendHTML(){const me=L.me,V=myVills();
+  return `<section class="box"><h3>🕵️ ตั้งค่าตัวสอดของฉัน <span class="note" style="font-weight:400">· เก็บเฉพาะเครื่องนี้ (ไม่แชร์)</span></h3><div class="set">
+    <label>👤 ชื่อผู้เล่นของฉัน <input value="${esc(me.player)}" placeholder="ชื่อในเกม (ตาม map.sql)" style="width:170px" onchange="setMe('player',this.value.trim())"></label>
+    <label>จำนวนตัวสอด <input type="number" min="1" value="${+me.count||1}" style="width:70px" onchange="setMe('count',Math.max(1,+this.value||1))"></label>
+    <label>ลานประลองของเรา (TS) <input type="number" min="0" max="20" value="${+me.ts||0}" style="width:56px" onchange="setMe('ts',Math.max(0,Math.min(20,+this.value||0)))"></label>
+    ${V.length?'':`<label title="ใช้เมื่อพิมพ์พิกัดเอง โดยไม่มีหมู่บ้านใน map.sql">เผ่าของเรา <select onchange="setMe('tribe',this.value)"><option value="">—</option>${Object.keys(SCOUT_U).map(t=>`<option ${me.tribe===t?'selected':''}>${t}</option>`).join('')}</select></label>`}
+    <span class="note">${!MP.rows?'ต้องมี map.sql ก่อน (ใส่เซิร์ฟเวอร์ด้านบน)':!me.player?'ใส่ชื่อผู้เล่น เพื่อเลือกหมู่บ้านต้นทาง (หรือพิมพ์พิกัดต้นทางเองในแต่ละแถว แล้วเลือกเผ่า)':V.length?'หมู่บ้านของคุณ '+V.length+' หมู่บ้าน · ตัวสอด: '+esc((scoutOf(V[0])||{}).n||'?')+' (ความเร็ว '+((scoutOf(V[0])||{}).v||'?')+')':'<span class="warn">ไม่พบผู้เล่น "'+esc(me.player)+'" ใน map.sql</span>'}</span>
+  </div></section>
+  <section class="box"><h3>⏱ คิวปล่อยตัวสอด <span class="note" style="font-weight:400">· เรียงตามเวลาที่ต้องกด · แสดงเฉพาะเวลาที่ยังไม่ถึง</span></h3><div id="sendbox"></div></section>`;}
+function cdText(left,now,tr){return left>=0?'อีก '+hms(left/1000):'เลยมาแล้ว '+hms(-left/1000)+' · ปล่อยตอนนี้ถึง '+clock(now+tr*1000);}
+function tkCls(left){return left==null?'':left<0?'late':left<300000?'u1':left<1800000?'u2':'';}
+function renderSend(tick){const box=$('sendbox');if(!box)return;const o=op(),now=gameNow(),{out,hidden}=tasks(),V=myVills();
+  const sig=JSON.stringify([out.map(k=>[k.a.id,k.tg.b&&k.tg.b.id,k.src&&k.src.r.vid,k.src&&k.src.r.x,k.src&&k.src.r.y,k.cand.length,k.press,tkCls(k.press!=null?k.press-now:null)]),hidden,V.length,o.A.length,o.B.length]);
+  if(tick&&box.dataset.sig===sig){box.querySelectorAll('.cd').forEach(e=>{e.textContent=cdText(+e.dataset.p-now,now,+e.dataset.tr);});return;}
+  box.dataset.sig=sig;
+  if(!o.A.length||!o.B.length){box.innerHTML='<p class="note">ใส่หมู่บ้านศัตรูและหมู่บ้านเราที่โดนตีในแท็บ 📊 ตารางเวลาปล่อย ก่อน</p>';return;}
+  if(!out.length){box.innerHTML=`<p class="note">ไม่มีเวลาปล่อยที่ยังไม่ถึง${hidden?' ('+hidden+' หมู่บ้านเลยเวลาแล้ว — ดูสถานะในแท็บตาราง)':''}</p>`;return;}
+  box.innerHTML=out.map(k=>{const a=k.a,s=k.src,link=s?sendLink(s.r,a):'',left=k.press!=null?k.press-now:null;
+    const cell=k.tg.b?o.marks[mk(a.id,k.tg.b.id)]:null,st=cell?cell.s:'none';
+    const cls=tkCls(left);
+    return `<div class="tk ${cls}">
+      <div><b>⚔️ ${esc(a.name||'(ไม่มีชื่อ)')}</b> <span class="note">(${a.x}/${a.y})</span>${a.player?`<div class="note">${esc(a.player)}${a.ally?' · '+esc(a.ally):''}</div>`:''}
+        <div class="note" style="margin-top:4px">ยึดเวลาปล่อยของ <select onchange="setPick(${a.id},this.value)"><option value="all" ${!k.tg.b?'selected':''}>ทุกหมู่บ้าน (ล่าสุด ${clock(k.opts[k.opts.length-1].t)})</option>${k.opts.map(x=>`<option value="${x.b.id}" ${k.tg.b&&k.tg.b.id===x.b.id?'selected':''}>${esc(x.b.name||'('+x.b.x+'/'+x.b.y+')')} · ${clock(x.t)}</option>`).join('')}</select></div>
+        <div class="note"><span class="dot ${st}"></span>ศัตรูปล่อย ${dmy(k.tg.t)} ${clock(k.tg.t)} → ตัวสอดถึงพร้อมเวลาปล่อย <b>${clock(k.arrive)}</b></div></div>
+      <div><div class="note">ส่งจากหมู่บ้านของเรา</div><input id="sq${a.id}" class="sq" value="${esc(k.q)}" placeholder="🔍 พิมพ์พิกัด x/y หรือชื่อหมู่บ้าน" oninput="setQ(${a.id},this)">${k.cand.length>1||(k.cand.length===1&&!k.cand[0].r.custom)?`<select onchange="setSrc(${a.id},this.value)">${k.cand.map(c=>`<option value="${c.r.vid}" ${s&&c.r.vid===s.r.vid?'selected':''}>${esc(c.r.name)} (${c.r.x}/${c.r.y}) · เดิน ${hms(c.tr)}</option>`).join('')}</select>`:''}${s?`<div class="note">${s.r.custom?'พิกัดที่พิมพ์ (ไม่มีใน map.sql) · ':''}ระยะ ${dist(s.r,a).toFixed(1)} ช่อง · ${esc((scoutOf(s.r)||{}).n||'')} × ${+L.me.count||1}${s.r.custom?' · เดิน '+hms(s.tr):''}</div>`:`<div class="note warn">${k.q?(parseXY(k.q)&&!myTribe()?'เลือกเผ่าของเราด้านบนก่อน':'ไม่พบหมู่บ้านที่ตรงกัน'):'ใส่ชื่อผู้เล่นด้านบน หรือพิมพ์พิกัดต้นทาง'}</div>`}</div>
+      <div>${s?`<div class="note">กดปล่อย</div><div class="press">${clock(k.press)}</div><div class="note">${dmy(k.press)}</div><div class="cd" data-p="${k.press}" data-tr="${s.tr}">${cdText(left,now,s.tr)}</div>`:''}</div>
+      <div>${link?`<a class="go" href="${esc(link)}" target="_blank" rel="noopener">🕵️ ส่งตัวสอด ↗</a>`:''}</div></div>`;}).join('')+
+    `<p class="note">${hidden?hidden+' หมู่บ้านเลยเวลาปล่อยทุกช่องแล้ว (ไม่แสดง) · ':''}ตัวสอดถึงตรงกับเวลาที่ศัตรูต้องปล่อยทัพพอดี — อยากให้ถึงก่อน/หลังกี่วินาที ปรับตอนกดเอง · ปุ่มส่งจะแสดงเมื่อรู้ ID ของหมู่บ้านต้นทาง (มีใน map.sql) · ลิงก์เปิดหน้าส่งทหารของหมู่บ้านนั้นในเกม ใส่ตัวสอดให้แล้ว (ส่งแบบปล้น = สอดแนม) · ต้องกดยืนยันในเกมเอง และเลือกสอดทรัพยากร/การป้องกันได้ในหน้ายืนยัน · ใช้ได้กับหมู่บ้านในบัญชีของคุณเท่านั้น</p>`;}
+function setMe(k,v){L.me[k]=v;save();render();}
+function setPick(aid,v){const p=L.me.pick[meKey()]=L.me.pick[meKey()]||{};p[aid]=v;save();renderSend();}
+let qT=null;function setQ(aid,el){const p=L.me.q[meKey()]=L.me.q[meKey()]||{};p[aid]=el.value;const pos=el.selectionStart;clearTimeout(qT);qT=setTimeout(()=>{save();renderSend();const e=$('sq'+aid);if(e){e.focus();try{e.setSelectionRange(pos,pos);}catch(_){}}},250);}
+function setSrc(aid,v){const p=L.me.src[meKey()]=L.me.src[meKey()]||{};p[aid]=+v;save();renderSend();}
+function pickHTML(side,ph){return `<div class="pick"><input id="pq${side}" type="search" autocomplete="off" placeholder="${MP.rows?ph:'ใส่เซิร์ฟเวอร์ด้านบนก่อน เพื่อค้นหาจาก map.sql'}" ${MP.rows?'':'disabled'} oninput="pq('${side}',this.value)" onkeydown="pkey(event,'${side}')" onblur="setTimeout(()=>pclose('${side}'),150)"><div class="pl" id="pl${side}"></div></div>`;}
+function vMeta(v){const r=v.x!==''&&v.y!==''?vill(v.x,v.y):null;return r?`<span class="note">${esc(r.player)}${r.ally?' · '+esc(r.ally):''} · ${esc(MAP_TRIBE[r.tribe]||'')} · ${fmt(r.pop)}</span>`:(v.player?`<span class="note">${esc(v.player)}</span>`:'');}
+function aCard(a,dis){const U=UNITS[a.tribe]||[];
+  return `<div class="vc"><div><span class="t">${esc(a.name||'(ไม่มีชื่อ)')}</span> <span class="note">(${a.x}/${a.y})</span><br>${vMeta(a)}</div>
+  <div class="x">${dis?'':`<button class="lnk" onclick="moveV('A',${a.id},-1)" title="ขึ้น">▲</button><button class="lnk" onclick="moveV('A',${a.id},1)" title="ลง">▼</button><button class="lnk dng" onclick="delV('A',${a.id})" title="ลบ">✕</button>`}</div>
+  <div class="f"><label>ชื่อ <input ${dis} value="${esc(a.name)}" style="width:120px" onchange="setF('A',${a.id},'name',this.value)"></label>
+    <label>X <input ${dis} type="number" value="${a.x}" onchange="setF('A',${a.id},'x',this.value)"></label><label>Y <input ${dis} type="number" value="${a.y}" onchange="setF('A',${a.id},'y',this.value)"></label>
+    <label>ลาน <input ${dis} type="number" min="0" max="20" value="${+a.ts||0}" style="width:56px" onchange="setF('A',${a.id},'ts',this.value,false)"></label>
+    <label>เผ่า <select ${dis} onchange="setF('A',${a.id},'tribe',this.value)">${Object.keys(UNITS).map(t=>`<option ${t===a.tribe?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label>หน่วยช้าสุด <select ${dis} onchange="setF('A',${a.id},'unit',+this.value,false)">${U.map(u=>`<option value="${u[0]}" ${+a.unit===u[0]?'selected':''}>${esc(u[1])} (${u[2]})</option>`).join('')}</select></label>
+    <label title="ใส่เองถ้ารู้ความเร็วจริง (ช่อง/ชม. รวมความเร็วเซิร์ฟแล้ว) · ว่าง = ใช้หน่วยที่เลือก">หรือความเร็ว <input ${dis} type="number" step="0.1" min="0" value="${a.sp}" placeholder="${speedOf(Object.assign({},a,{sp:''}))}" style="width:62px" onchange="setF('A',${a.id},'sp',this.value===''?'':+this.value,false)"></label>
+    <label>รองเท้า <select ${dis} onchange="setF('A',${a.id},'boots',+this.value,false)">${BOOTS.map(b=>`<option value="${b}" ${+a.boots===b?'selected':''}>${b?'+'+b+'%':'—'}</option>`).join('')}</select></label>
+    <label>อาร์ติแฟกต์ <select ${dis} onchange="setF('A',${a.id},'art',this.value,false)"><option value="">—</option>${Object.keys(ART).map(k=>`<option value="${k}" ${a.art===k?'selected':''}>×${k}</option>`).join('')}</select></label></div></div>`;}
+function bCard(b,dis){return `<div class="vc"><div><span class="t">${esc(b.name||'(ไม่มีชื่อ)')}</span> <span class="note">(${b.x}/${b.y})</span><br>${vMeta(b)}</div>
+  <div class="x">${dis?'':`<button class="lnk" onclick="moveV('B',${b.id},-1)">▲</button><button class="lnk" onclick="moveV('B',${b.id},1)">▼</button><button class="lnk dng" onclick="delV('B',${b.id})">✕</button>`}</div>
+  <div class="f"><label>ชื่อ <input ${dis} value="${esc(b.name)}" style="width:120px" onchange="setF('B',${b.id},'name',this.value)"></label>
+    <label>X <input ${dis} type="number" value="${b.x}" onchange="setF('B',${b.id},'x',this.value)"></label><label>Y <input ${dis} type="number" value="${b.y}" onchange="setF('B',${b.id},'y',this.value)"></label>
+    <label>🕒 ทัพเข้า <input ${dis} type="datetime-local" step="1" value="${esc(b.eta)}" onchange="setF('B',${b.id},'eta',this.value,false)"></label></div></div>`;}
+const ST={safe:['safe','ปลอดภัย','✓'],gone:['gone','ทัพหาย','✗']};
+function rowInfo(a){const o=op(),L2=o.B.map(b=>launchMs(a,b)).filter(v=>v!=null);return {last:L2.length?Math.max(...L2):null,first:L2.length?Math.min(...L2):null};}
+function rowCount(a){const o=op(),c={none:0,safe:0,gone:0};o.B.forEach(b=>{if(launchMs(a,b)==null)return;const m=o.marks[mk(a.id,b.id)];c[m?m.s:'none']++;});return c;}
+function renderMatrix(){
+  const box=$('mxbox');if(!box)return;const o=op(),now=gameNow(),ro=!canEdit();
+  if(!o.A.length||!o.B.length){box.innerHTML='<p class="note">ใส่หมู่บ้านศัตรู (ซ้าย) และหมู่บ้านเราที่โดนตี (ขวา) อย่างน้อยฝั่งละ 1</p>';return;}
+  let h='<div class="scroll"><table class="mx"><thead><tr><th class="rh">ศัตรู \\ หมู่บ้านเรา</th>'+o.B.map(b=>{const e=parseDT(b.eta);return `<th>${esc(b.name||'('+b.x+'/'+b.y+')')}<div class="d">(${b.x}/${b.y}) · เข้า ${e!=null?dmy(e)+' '+clock(e):'—'}</div></th>`;}).join('')+'</tr></thead><tbody>';
+  o.A.forEach(a=>{const ri=rowInfo(a),v=speedOf(a)*(ART[a.art]||1),c=rowCount(a);
+    h+=`<tr><td class="rh"><b>${esc(a.name||'(ไม่มีชื่อ)')}</b> <span class="note">(${a.x}/${a.y})</span>${a.player?`<div class="note">${esc(a.player)}${a.ally?' · '+esc(a.ally):''}</div>`:''}
+      <div class="note">ความเร็ว ${v?+v.toFixed(2):'?'} · ลาน ${+a.ts||0}${a.boots?' · รองเท้า +'+a.boots+'%':''}${a.art?' · ×'+a.art:''}</div>
+      ${ri.last!=null?`<div class="when">🔭 ควรสอดหลัง <b>${dmy(ri.last)} ${clock(ri.last)}</b>${ri.last>now?' <span class="note">(อีก '+hms((ri.last-now)/1000)+')</span>':' <span class="note">(สอดได้แล้ว)</span>'}</div>`:''}
+      <div class="rsum"><span class="dot none"></span>${c.none} <span class="dot safe" style="margin-left:6px"></span>${c.safe} <span class="dot gone" style="margin-left:6px"></span>${c.gone}</div></td>`;
+    o.B.forEach(b=>{const t=launchMs(a,b),tr=travelSec(a,b);
+      if(t==null){h+='<td class="c note">—</td>';return;}
+      const id=mk(a.id,b.id),m=o.marks[id],s=m?m.s:'none';
+      const lbl=s==='safe'?'ปลอดภัย':s==='gone'?'ทัพหาย มีโอกาสโดน':(t>now?`<span class="soon">${t-now<3600000?'อีก '+hms((t-now)/1000):'ยังไม่ถึงเวลาปล่อย'}</span>`:'ยังไม่มีข้อมูล · สอดได้แล้ว');
+      h+=`<td class="c s-${s}" title="ระยะ ${dist(a,b).toFixed(1)} ช่อง · เดิน ${hms(tr)}"><b>${clock(t)}</b><div class="d">${dmy(t)} · เดิน ${hms(tr)}</div>
+        <div class="d"><span class="dot ${s}"></span>${lbl}</div>
+        <div class="cb">${Object.keys(ST).map(k=>`<button class="${k} ${s===k?'on':''}" ${ro?'disabled':''} onclick="mark(${a.id},${b.id},'${k}')" title="${ST[k][1]}${s===k?' (กดอีกครั้ง = ล้าง)':''}">${ST[k][2]} ${ST[k][1]}</button>`).join('')}</div>
+        ${m?`<div class="cby"><button class="lnk" style="padding:0;font-size:11px" ${ro?'disabled':''} onclick="markTime('${id}')">${dmy(m.at)} ${clock(m.at)}</button>${m.by?' · '+esc(m.by):''}</div>`:''}</td>`;});
+    h+='</tr>';});
+  box.innerHTML=h+'</tbody></table></div><p class="note"><span class="dot none"></span>เหลือง = ยังไม่มีข้อมูล · <span class="dot safe"></span>เขียว = ปลอดภัย (สอดหลังเวลาปล่อยแล้วทัพยังอยู่บ้าน) · <span class="dot gone"></span>แดง = ทัพหาย มีโอกาสโดน · กดปุ่มเดิมอีกครั้ง = ล้าง · กดเวลาใต้ปุ่มเพื่อแก้เป็นเวลาในรายงานสอด · 🔭 ควรสอดหลัง = เวลาปล่อยล่าสุดของหมู่บ้านนั้น</p>';
+}
+setInterval(()=>{if(L.tab!=='help'&&!document.hidden&&!document.querySelector('input:focus,select:focus')){if(L.tab==='send')renderSend(true);else renderMatrix();}},1000);
+function setS(k,v){const p=prof(),s=p.s;s[k]=k==='host'?hostOf(v)||String(v).trim():v;save();
+  profOps().forEach(o=>{if(o.online&&o.online.role!=='view'){if(o===op())olSchedule();else olPush(o);}});
+  if(k==='host')mpEnsure(false);render();}
+/* ----- ค้นหาหมู่บ้าน ----- */
+const PK={};
+function pq(side,v){const L2=findV(v);PK[side]={list:L2.slice(0,40),n:L2.length,i:0,q:String(v||'').trim()};pdraw(side);}
+function pdraw(side){const el=$('pl'+side),st=PK[side];if(!el||!st)return;
+  if(!st.list.length){el.innerHTML=st.q?'<div class="note" style="padding:6px">ไม่พบ</div>':'';el.classList.toggle('on',!!st.q);return;}
+  el.innerHTML=st.list.map((r,i)=>`<button class="pi ${i===st.i?'on':''}" onpointerdown="event.preventDefault()" onclick="ppick('${side}',${i})"><b>${esc(r.name)}</b> <span class="note">(${r.x}/${r.y})</span><br><span class="note">${esc(r.player)}${r.ally?' · '+esc(r.ally):''} · ${esc(MAP_TRIBE[r.tribe]||'')} · ${fmt(r.pop)}</span></button>`).join('')+(st.n>st.list.length?`<div class="note" style="padding:6px">… อีก ${fmt(st.n-st.list.length)} · พิมพ์เพิ่มเพื่อกรอง</div>`:'');
+  el.classList.add('on');}
+function pclose(side){const el=$('pl'+side);if(el){el.classList.remove('on');el.innerHTML='';}}
+function pkey(e,side){const st=PK[side];if(e.key==='Escape')return pclose(side);if(!st||!st.list.length)return;
+  if(e.key==='ArrowDown'){st.i=Math.min(st.list.length-1,st.i+1);pdraw(side);e.preventDefault();}else if(e.key==='ArrowUp'){st.i=Math.max(0,st.i-1);pdraw(side);e.preventDefault();}else if(e.key==='Enter'){e.preventDefault();ppick(side,st.i);}}
+function ppick(side,i){const r=PK[side]&&PK[side].list[i];if(!r)return;const o=op();
+  if(o[side].some(v=>+v.x===r.x&&+v.y===r.y)){toast('มีหมู่บ้านนี้แล้ว');return;}
+  if(side==='A')addA(r);else addB(r);delete PK[side];setTimeout(()=>{const q=$('pq'+side);if(q)q.focus();},0);}
+/* ----- คัดลอก ----- */
+function copyAll(){const o=op(),now=gameNow(),SYM={none:'🟨',safe:'🟩',gone:'🟥'},TX={none:'ยังไม่มีข้อมูล',safe:'ปลอดภัย',gone:'ทัพหาย มีโอกาสโดน'};
+  const L2=[`🔭 สอดแนม: ${o.name}`];
+  o.A.map(a=>({a,ri:rowInfo(a)})).filter(x=>x.ri.last!=null).sort((p,q)=>p.ri.last-q.ri.last).forEach(({a,ri})=>{
+    L2.push(`⚔️ ${a.name||''}${a.player?' · '+a.player:''} (${a.x}/${a.y}) · สอดหลัง ${dmy(ri.last)} ${clock(ri.last)}`);
+    o.B.forEach(b=>{const t=launchMs(a,b);if(t==null)return;const m=o.marks[mk(a.id,b.id)],s=m?m.s:'none';
+      L2.push(`   ${SYM[s]} → ${b.name||''} (${b.x}/${b.y}) ปล่อย ${dmy(t)} ${clock(t)} · ${TX[s]}${m?' ('+clock(m.at)+(m.by?' '+m.by:'')+')':''}`);});});
+  const txt=L2.join('\n');(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('📋 คัดลอกแล้ว')).catch(()=>prompt('คัดลอกข้อความนี้',txt));}
+/* ----- ปฏิบัติการ ----- */
+function selOp(id){L.cur=id;save();olWatch();mpEnsure(false);render();}
+function selProf(id){L.pcur=id;if(!profOps().length)L.ops.push(newOpData());if(!profOps().find(o=>o.id===L.cur))L.cur=profOps()[0].id;save();olWatch();mpEnsure(false);render();}
+function newProf(){mOpen('<h4>＋ เพิ่มโปรไฟล์ (เซิร์ฟเวอร์)</h4><p class="note">1 โปรไฟล์ = 1 เซิร์ฟเวอร์ที่เล่น · ในโปรไฟล์มีตารางสอดได้หลายกลุ่ม</p><input id="mh" style="width:100%" placeholder="เซิร์ฟเวอร์ เช่น ts21.x2.asia.travian.com"><input id="mn" style="width:100%;margin-top:6px" placeholder="ชื่อโปรไฟล์ (ว่าง = ใช้ชื่อเซิร์ฟเวอร์)">',
+  [{t:'สร้าง',c:'pri',f:()=>{const h=hostOf($('mh').value)||String($('mh').value||'').trim(),sp=/\.x(\d)\./.exec(h);
+    const p={id:uid('p'),name:($('mn').value||'').trim(),s:Object.assign(defS(),{host:h,speed:sp?Math.min(3,+sp[1]):(h?1:2)})};L.profs.push(p);L.pcur=p.id;L.ops.push(newOpData());L.cur=profOps()[0].id;save();olWatch();mpEnsure(false);render();}},{t:'ยกเลิก'}]);setTimeout(()=>$('mh')&&$('mh').focus(),0);}
+function renameProf(){const p=prof();mOpen(`<h4>✏️ ชื่อโปรไฟล์</h4><input id="mn" style="width:100%" value="${esc(p.name)}" placeholder="${esc(p.s.host||'')}">`,[{t:'บันทึก',c:'pri',f:()=>{p.name=($('mn').value||'').trim();save();render();}},{t:'ยกเลิก'}]);}
+function delProf(){const p=prof(),os=profOps(),on=os.filter(o=>o.online).length;
+  mOpen(`<h4>🗑️ ลบโปรไฟล์ "${esc(profName(p))}"?</h4><p class="note">ลบตารางสอดในโปรไฟล์นี้ ${os.length} ตาราง ออกจากเครื่องนี้ · กู้คืนไม่ได้${on?' · ตารางออนไลน์ '+on+' ตารางยังอยู่บนคลาวด์ (ลบออนไลน์ได้จากปุ่ม 👥 ของแต่ละตาราง)':''}</p>`,
+    [{t:'ลบ',c:'dng',f:()=>{os.forEach(o=>{if(o.online)L.hidden=Object.assign(L.hidden||{},{[o.online.id]:1});});L.ops=L.ops.filter(o=>o.pid!==p.id);L.profs=L.profs.filter(x=>x!==p);
+      if(!L.profs.length)L.profs.push({id:uid('p'),name:'',s:defS()});selProf(L.profs[0].id);}},{t:'ยกเลิก'}]);}
+function newOp(){mOpen('<h4>＋ เพิ่มตารางสอด</h4><input id="mn" style="width:100%" placeholder="เช่น ป้องกัน 10 พ.ย.">',[{t:'สร้าง',c:'pri',f:()=>{const o=newOpData(($('mn').value||'').trim()||'ตารางสอด '+(profOps().length+1));
+  L.ops.push(o);L.cur=o.id;save();olWatch();render();}},{t:'ยกเลิก'}]);setTimeout(()=>$('mn')&&$('mn').focus(),0);}
+function renameOp(){if(!canEdit())return;const o=op();mOpen(`<h4>✏️ เปลี่ยนชื่อ</h4><input id="mn" style="width:100%" value="${esc(o.name)}">`,[{t:'บันทึก',c:'pri',f:()=>{const v=($('mn').value||'').trim();if(v){o.name=v;change();}}},{t:'ยกเลิก'}]);}
+function delOp(){const o=op();mOpen(`<h4>🗑️ ลบ "${esc(o.name)}"?</h4><p class="note">${o.online?(o.online.role==='owner'?'ตารางนี้ออนไลน์อยู่ — ลบออกจากคลาวด์ด้วย ทุกคนในทีมจะไม่เห็นอีก':'ลบเฉพาะในเครื่องคุณ (ของทีมยังอยู่)'):'กู้คืนไม่ได้'}</p>`,
+  [{t:'ลบ',c:'dng',f:async()=>{if(o.online&&o.online.role==='owner'&&FB.db){try{await FB.db.collection(COL).doc(o.online.id).delete();}catch(e){toast('⚠ ลบบนคลาวด์ไม่สำเร็จ');return;}}
+    if(o.online)L.hidden=Object.assign(L.hidden||{},{[o.online.id]:1});
+    L.ops=L.ops.filter(x=>x!==o);if(!profOps().length)L.ops.push(newOpData());L.cur=profOps()[0].id;save();olWatch();render();}},{t:'ยกเลิก'}]);}
+/* ----- หน้าต่าง ----- */
+function mOpen(html,btns){$('mcard').innerHTML=html+'<div class="mbtn">'+btns.map((b,i)=>`<button class="${b.c||''}" id="mb${i}">${esc(b.t)}</button>`).join('')+'</div>';
+  btns.forEach((b,i)=>{$('mb'+i).onclick=()=>{mClose();if(b.f)b.f();};});$('modal').classList.add('on');}
+function mClose(){$('modal').classList.remove('on');}
+/* ============ ออนไลน์: ล็อกอิน Google + Firestore (ทุกคนในทีมเห็นสถานะเดียวกันทันที) ============ */
+// scoutops/{id} = {owner, ownerEmail, ownerName, name, emails:[...], roles:{email:'edit'|'view'}, data (JSON: s,A,B,nextId), ver, marks:{idศัตรู:{s,at,by}}, updatedAt, by}
+// แก้ข้อมูลหมู่บ้าน/ตั้งค่า: ส่งทั้งก้อนพร้อมเลขเวอร์ชัน (ชนกัน = ใช้ของคลาวด์แล้วแจ้ง) · สถานะการสอด: เขียนทีละช่อง (marks.<id>) ไม่ชนกัน
+const FB={auth:null,db:null,user:null,ready:false,unsub:null,watch:'',push:0,fly:false,pend:null};
+const meEmail=()=>FB.user&&FB.user.email?FB.user.email.trim().toLowerCase():'';
+const shortMe=()=>FB.user?String(FB.user.displayName||meEmail().split('@')[0]).split(' ')[0]:'ฉัน';
+const roleOf=d=>FB.user&&d.owner===FB.user.uid?'owner':((d.roles||{})[meEmail()]||'');
+const DATA_KEYS=['s','A','B','nextId'];
+const pickData=o=>JSON.stringify({s:o.s,A:o.A,B:o.B,nextId:o.nextId});
+function putData(o,str){let d={};try{d=JSON.parse(str)||{};}catch(e){}DATA_KEYS.forEach(k=>{if(k!=='s'&&d[k]!==undefined)o[k]=d[k];});adoptS(o,d.s);if(!Array.isArray(o.A))o.A=[];if(!Array.isArray(o.B))o.B=[];}
+function fbInit(){
+  if(location.protocol==='file:'&&!window.firebase){renderUser();return;}
+  if(window.firebase){fbSetup();return;}
+  const S=['https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js'];
+  let i=0;const next=()=>{if(i>=S.length){fbSetup();return;}const sc=document.createElement('script');sc.src=S[i++];sc.onload=next;sc.onerror=()=>renderUser();document.head.appendChild(sc);};next();}
+function fbSetup(){try{if(!firebase.apps.length)firebase.initializeApp(FB_CONFIG);}catch(e){return;}
+  FB.auth=firebase.auth();FB.db=firebase.firestore();FB.ready=true;FB.auth.onAuthStateChanged(u=>{FB.user=u||null;renderUser();if(u)olList();else{olUnwatch();render();}});}
+function login(){if(!FB.ready){toast('ยังโหลดระบบล็อกอินไม่ได้ (ต้องเปิดจากลิงก์เว็บ https)');return;}
+  FB.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{const c=(e&&e.code)||'';if(c==='auth/popup-blocked')FB.auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());else if(!/closed|cancelled/.test(c))toast('ล็อกอินไม่สำเร็จ: '+c);});}
+function renderUser(){const e=$('user');if(!e)return;
+  if(!FB.user){e.innerHTML=`<button onclick="login()">🔑 เข้าสู่ระบบ Google</button>`;return;}
+  const n=FB.user.displayName||meEmail();e.innerHTML=`<span class="chip" onclick="userMenu()" title="${esc(meEmail())}"><span class="av">${esc(n.charAt(0).toUpperCase())}</span>${esc(n.split(' ')[0])} ▾</span>`;}
+function userMenu(){mOpen(`<h4>👤 ${esc(FB.user.displayName||'')}</h4><p class="note">${esc(meEmail())}</p>`,[{t:'🔄 โหลดรายการทีมใหม่',f:()=>olList(true)},{t:'ออกจากระบบ',c:'dng',f:()=>FB.auth.signOut()},{t:'ปิด'}]);}
+// รายการปฏิบัติการออนไลน์ที่เราเป็นหัวหน้าหรือได้รับเชิญ → ใส่ในรายการของเครื่องนี้
+async function olList(manual){if(!FB.user)return;
+  try{const c=FB.db.collection(COL),[a,b]=await Promise.all([c.where('owner','==',FB.user.uid).get(),c.where('emails','array-contains',meEmail()).get()]);
+    const seen=new Set(),docs=[...a.docs,...b.docs].filter(x=>!seen.has(x.id)&&seen.add(x.id));let added=0;
+    docs.forEach(x=>{const d=x.data(),role=roleOf(d);if(!role)return;let o=L.ops.find(z=>z.online&&z.online.id===x.id);
+      if(!o){if(L.hidden&&L.hidden[x.id]&&!manual)return;if(L.hidden)delete L.hidden[x.id];o=newOpData(d.name);o.id='o'+x.id;L.ops.push(o);added++;}
+      o.online={id:x.id,role,ownerName:d.ownerName||d.ownerEmail||'',n:(d.emails||[]).length,ver:+d.ver||0};o.name=d.name||o.name;putData(o,d.data);o.marks=d.marks||{};});
+    L.ops=L.ops.filter(o=>!(o.id==='l0'));save();if(added)toast('🌐 มีตารางสอดของทีม '+added+' รายการ');if(manual)toast('🔄 โหลดรายการทีมแล้ว');
+  }catch(e){toast('⚠ อ่านรายการทีมไม่ได้ — ตรวจ rules ของ Firestore ('+((e&&e.code)||e)+')',6000);}
+  olWatch();render();}
+function olUnwatch(){if(FB.unsub){try{FB.unsub();}catch(e){}}FB.unsub=null;FB.watch='';}
+function olWatch(){const o=op();const id=o&&o.online&&FB.user?o.online.id:'';if(id===FB.watch)return;olUnwatch();if(!id)return;FB.watch=id;
+  FB.unsub=FB.db.collection(COL).doc(id).onSnapshot(sn=>{const o=L.ops.find(z=>z.online&&z.online.id===id);if(!o)return;
+    if(!sn.exists){olDetach(o,'หัวหน้าลบตารางนี้แล้ว · ข้อมูลยังอยู่ในเครื่องนี้');return;}
+    const d=sn.data(),role=roleOf(d);if(!role){olDetach(o,'คุณไม่ได้อยู่ในทีมของตารางนี้แล้ว');return;}
+    const go=()=>{const pend=FB.push||FB.fly;
+      o.online.role=role;o.online.n=(d.emails||[]).length;o.online.ownerName=d.ownerName||d.ownerEmail||'';o.name=d.name||o.name;
+      if(!pend&&(+d.ver||0)>o.online.ver){putData(o,d.data);o.online.ver=+d.ver||0;if(d.by&&d.by!==meEmail())toast('🌐 อัปเดตจาก '+d.by);}
+      o.marks=Object.assign({},d.marks||{});save();if(op()===o)render();};
+    if(document.activeElement&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)&&!document.activeElement.closest('.pick')){FB.pend=go;const h=()=>{document.removeEventListener('focusout',h,true);setTimeout(()=>{const f=FB.pend;FB.pend=null;if(f)f();},60);};document.addEventListener('focusout',h,true);}
+    else go();
+  },e=>{if((e&&e.code)==='permission-denied'){const o=L.ops.find(z=>z.online&&z.online.id===id);if(o)olDetach(o,'คุณไม่ได้อยู่ในทีมของตารางนี้แล้ว');}});}
+function olDetach(o,msg){if(o.online)L.hidden=Object.assign(L.hidden||{},{[o.online.id]:1});o.online=null;save();olUnwatch();render();if(msg)toast('🌐 '+msg,5000);}
+function olSchedule(){clearTimeout(FB.push);FB.push=setTimeout(()=>{FB.push=0;olPush();},800);}
+async function olPush(o){o=o||op();if(!o||!o.online||!FB.user||o.online.role==='view')return;const id=o.online.id,base=o.online.ver,str=pickData(o);
+  if(str.length>900000){toast('⚠ ข้อมูลใหญ่เกินไป');return;}FB.fly=true;
+  try{const ref=FB.db.collection(COL).doc(id);
+    const ver=await FB.db.runTransaction(async tx=>{const sn=await tx.get(ref);if(!sn.exists){const e=new Error('gone');e.gone=1;throw e;}const d=sn.data(),cur=+d.ver||0;
+      if(cur!==base){const e=new Error('conflict');e.conflict=1;e.d=d;throw e;}
+      tx.update(ref,{data:str,ver:cur+1,name:o.name,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),by:meEmail()});return cur+1;});
+    o.online.ver=ver;save();if(pickData(o)!==str)olSchedule();
+  }catch(e){if(e&&e.conflict){putData(o,e.d.data);o.online.ver=+e.d.ver||0;o.marks=e.d.marks||{};save();render();toast('⚠ มีคนแก้พร้อมกัน — ใช้ฉบับล่าสุดแล้ว กรุณาแก้อีกครั้ง',5000);}
+    else if(e&&(e.gone||e.code==='permission-denied'))olDetach(o,'ซิงค์ไม่ได้ (ไม่มีสิทธิ์ หรือตารางถูกลบ)');else{toast('⚠ ซิงค์ไม่สำเร็จ — จะลองใหม่');setTimeout(olSchedule,15000);}}
+  finally{FB.fly=false;}}
+function olMark(id,v,silent){const o=op();if(v)o.marks[id]=v;else delete o.marks[id];save();if(!silent)render();
+  if(o.online&&FB.user&&o.online.role!=='view'){const upd={};upd['marks.'+id]=v?v:firebase.firestore.FieldValue.delete();
+    FB.db.collection(COL).doc(o.online.id).update(upd).catch(e=>toast('⚠ บันทึกสถานะไม่สำเร็จ ('+((e&&e.code)||e)+')'));}}
+/* ----- หน้าต่างออนไลน์ / แชร์ ----- */
+const okEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+async function shareDlg(){const o=op();
+  if(!FB.user){mOpen('<h4>👥 ออนไลน์ / แชร์ให้ทีม</h4><p>ล็อกอินด้วย Google ก่อน แล้วจะขึ้นตารางนี้ออนไลน์และเชิญทีมด้วย Gmail ได้</p>',[{t:'🔑 เข้าสู่ระบบ',c:'pri',f:login},{t:'ปิด'}]);return;}
+  const what='<p class="note">ทุกคนในทีมเห็นหมู่บ้าน เวลา และสถานะการสอดเดียวกันทันที · ✏️ สอด/แก้ได้ = เพิ่มลบหมู่บ้านและกดสถานะได้ · 👁 ดูอย่างเดียว · คนที่ได้รับเชิญล็อกอินด้วย Gmail ที่ใส่ไว้แล้วจะเห็นปฏิบัติการนี้เอง</p>';
+  if(o.online&&o.online.role!=='owner'){mOpen(`<h4>👥 ตารางสอดของทีม</h4><p>หัวหน้า <b>${esc(o.online.ownerName)}</b> · สิทธิ์ของคุณ: <b>${o.online.role==='view'?'👁 ดูอย่างเดียว':'✏️ สอด/แก้ได้'}</b></p>${what}`,
+    [{t:'ออกจากทีม (เก็บข้อมูลไว้ในเครื่อง)',c:'dng',f:()=>olDetach(o,'ออกจากทีมแล้ว · ข้อมูลยังอยู่ในเครื่องนี้')},{t:'ปิด'}]);return;}
+  let d=null;if(o.online){try{const sn=await FB.db.collection(COL).doc(o.online.id).get();d=sn.exists?sn.data():null;}catch(e){}if(!d){toast('⚠ อ่านข้อมูลทีมไม่ได้');return;}}
+  const roles=(d&&d.roles)||{},emails=(d&&d.emails)||[];
+  const sel=(id,v,del)=>`<select id="${id}"><option value="edit" ${v==='edit'?'selected':''}>✏️ สอด/แก้ได้</option><option value="view" ${v==='view'?'selected':''}>👁 ดูอย่างเดียว</option>${del?'<option value="del">✕ เอาออก</option>':''}</select>`;
+  mOpen(`<h4>👥 ${o.online?'ทีมของ':'ขึ้นออนไลน์:'} "${esc(o.name)}"</h4>${what}${o.online?`<p><b>ทีม ${emails.length} คน</b></p>`+emails.map((e,i)=>`<div class="mrow"><span>${esc(e)}</span>${sel('me'+i,roles[e],1)}</div>`).join(''):''}
+    <p style="margin:10px 0 4px"><b>เชิญเพิ่ม (Gmail)</b></p><div class="mrow"><input id="mnew" type="email" placeholder="friend@gmail.com, ..." style="flex:1">${sel('mnr','edit')}</div><p class="note">ใส่หลายคนได้ คั่นด้วยเว้นวรรคหรือจุลภาค</p>`,
+    [{t:o.online?'บันทึก':'ขึ้นออนไลน์',c:'pri',f:()=>shareSave(o,d,emails,roles)},...(o.online?[{t:'ลบออนไลน์ (เหลือในเครื่อง)',c:'dng',f:()=>shareStop(o)}]:[]),{t:'ยกเลิก'}]);}
+async function shareSave(o,d,emails,roles){const R={};emails.forEach((e,i)=>{const el=$('me'+i);const v=el?el.value:roles[e];if(v!=='del')R[e]=v||'edit';});
+  const nr=($('mnr')||{}).value||'edit',raw=String(($('mnew')||{}).value||'').toLowerCase().split(/[\s,;]+/).filter(Boolean);
+  const bad=raw.filter(e=>!okEmail(e));if(bad.length){toast('⚠ อีเมลไม่ถูกต้อง: '+bad.join(', '));return;}raw.filter(e=>e!==meEmail()).forEach(e=>R[e]=nr);const E=Object.keys(R);
+  try{if(!o.online){const ref=FB.db.collection(COL).doc(),str=pickData(o);
+      await ref.set({owner:FB.user.uid,ownerEmail:meEmail(),ownerName:FB.user.displayName||meEmail(),name:o.name,emails:E,roles:R,data:str,ver:1,marks:o.marks||{},updatedAt:firebase.firestore.FieldValue.serverTimestamp(),by:meEmail()});
+      o.online={id:ref.id,role:'owner',ownerName:FB.user.displayName||meEmail(),n:E.length,ver:1};save();olWatch();render();toast('🌐 ขึ้นออนไลน์แล้ว'+(E.length?' · ให้ทีมเปิดแอปแล้วล็อกอินด้วย Gmail ที่ใส่ไว้':''),5000);}
+    else{await FB.db.collection(COL).doc(o.online.id).update({emails:E,roles:R,name:o.name});o.online.n=E.length;save();render();toast('👥 บันทึกทีมแล้ว');}
+  }catch(e){toast('⚠ บันทึกไม่สำเร็จ — ตรวจ rules ของ Firestore ('+((e&&e.code)||e)+')',6000);}}
+async function shareStop(o){try{await FB.db.collection(COL).doc(o.online.id).delete();}catch(e){toast('⚠ ลบออนไลน์ไม่สำเร็จ');return;}olUnwatch();o.online=null;save();render();toast('ลบออนไลน์แล้ว · ข้อมูลยังอยู่ในเครื่องนี้');}
+/* ============ เริ่ม ============ */
+load();render();i18nInit();mpEnsure(false);fbInit();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&op().s.host)mpEnsure(false);});
+</script>
+</body>
+</html>
