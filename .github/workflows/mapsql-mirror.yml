@@ -1,5 +1,5 @@
 # วางไฟล์นี้ในรีโพที่ .github/workflows/mapsql-mirror.yml (แทนไฟล์เดิม)
-# ทำอะไร: ทุกวัน 07:15 น. (เวลาไทย) และรอบสำรอง 08:47 / 10:23 น. เผื่อ GitHub รันช้าหรือข้ามรอบ
+# ทำอะไร: ทุกวัน 07:15 น. (เวลาไทย) และรอบสำรอง 08:47 / 10:23 น. เผื่อ GitHub รันช้าหรือข้ามรอบ · และทุกชั่วโมง (นาทีที่ 37) ดึงเฉพาะเซิร์ฟเวอร์ที่วันนี้ยังไม่มี
 #   1) รวมรายชื่อเซิร์ฟเวอร์ = FIXED_SERVERS + เซิร์ฟเวอร์ที่ผู้ใช้แอปเลือกใช้ใน 30 วันล่าสุด (อ่านจาก Firestore "mapServers")
 #   2) ดาวน์โหลด map.sql ของแต่ละเซิร์ฟเวอร์ · ถ้าวันนี้ดาวน์โหลดไม่สำเร็จ ใช้ไฟล์เมื่อวานแทน
 #   3) เก็บไว้ใน branch "mapdata" (เฉพาะฉบับล่าสุด รีโพไม่โตขึ้นทุกวัน)
@@ -12,6 +12,7 @@ on:
     - cron: '15 0 * * *'   # 00:15 UTC = 07:15 น. เวลาไทย (หลังเกมสร้าง map.sql ใหม่ราว 07:05)
     - cron: '47 1 * * *'   # สำรอง 08:47 น. — GitHub มักรันรอบตั้งเวลาช้าหรือข้ามรอบช่วงเที่ยงคืน UTC
     - cron: '23 3 * * *'   # สำรอง 10:23 น.
+    - cron: '37 4-23 * * *' # ทุกชั่วโมง: ดึงเฉพาะเซิร์ฟเวอร์ที่วันนี้ยังไม่มี (เซิร์ฟเวอร์ใหม่ที่ผู้ใช้เพิ่งขอ หรือที่ดึงไม่สำเร็จ) ถ้าไม่มีอะไรใหม่ จบโดยไม่แก้ branch
   workflow_dispatch: {}     # กด "Run workflow" เองได้ในแท็บ Actions
 
 permissions:
@@ -61,12 +62,33 @@ jobs:
           git clone -q --depth 1 --branch mapdata "https://github.com/${{ github.repository }}.git" prev 2>/dev/null || mkdir -p prev
           mkdir -p out; ok=0; : > status.txt
           prevdate="$(git -C prev log -1 --format=%cI 2>/dev/null || true)"
+          # servers whose copy was already downloaded today (after the game made the new file at 00:05 UTC): reuse, do not download again
+          python3 - > fresh.txt <<'PY'
+          import json, datetime
+          try:
+              idx = json.load(open('prev/_index.json'))
+          except Exception:
+              idx = {}
+          start = datetime.datetime.now(datetime.timezone.utc).replace(hour=0, minute=10, second=0, microsecond=0)
+          if datetime.datetime.now(datetime.timezone.utc) < start:
+              start -= datetime.timedelta(days=1)
+          for host, v in idx.items():
+              try:
+                  if datetime.datetime.fromisoformat(v['at'].replace('Z', '+00:00')) >= start:
+                      print(host)
+              except Exception:
+                  pass
+          PY
+          new=0
           while read -r s; do
             [ -z "$s" ] && continue
+            if grep -qxF "$s" fresh.txt && [ -f "prev/$s.sql" ]; then
+              cp "prev/$s.sql" "out/$s.sql"; echo "$s kept" >> status.txt; echo "fresh $s (already downloaded today)"; continue
+            fi
             if curl -fsSL --retry 3 --retry-delay 20 --max-time 120 \
                  -A "Mozilla/5.0 (map.sql mirror for Travian Resource Manager)" \
                  "https://$s/map.sql" -o "out/$s.sql" && grep -q "INSERT INTO" "out/$s.sql"; then
-              echo "OK    $s ($(wc -l < "out/$s.sql") villages)"; ok=$((ok+1)); echo "$s ok" >> status.txt
+              echo "OK    $s ($(wc -l < "out/$s.sql") villages)"; ok=$((ok+1)); new=$((new+1)); echo "$s ok" >> status.txt
             elif [ -f "prev/$s.sql" ]; then
               cp "prev/$s.sql" "out/$s.sql"; echo "$s kept" >> status.txt; echo "::warning::download failed, kept yesterday's file: $s"
             else
@@ -75,7 +97,8 @@ jobs:
             sleep 2
           done < servers.txt
           if [ -z "$(ls -A out)" ]; then echo "::error::no map.sql at all"; exit 1; fi
-          echo "downloaded today: $ok"
+          echo "downloaded in this run: $new"
+          echo "NEW=$new" >> "$GITHUB_ENV"
           # _index.json: when each server's file was really downloaded from the game (the app shows this time).
           # A file kept from an earlier day keeps its old time, so the app knows it is not today's copy.
           PREVDATE="$prevdate" python3 - <<'PY'
@@ -98,6 +121,7 @@ jobs:
           PY
 
       - name: Publish to the mapdata branch (latest copy only)
+        if: env.NEW != '0'      # nothing downloaded in this run = nothing to publish
         run: |
           cd out
           git init -q
