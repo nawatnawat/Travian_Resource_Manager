@@ -59,15 +59,16 @@ jobs:
       - name: Download map.sql (keep yesterday's file if a download fails)
         run: |
           git clone -q --depth 1 --branch mapdata "https://github.com/${{ github.repository }}.git" prev 2>/dev/null || mkdir -p prev
-          mkdir -p out; ok=0
+          mkdir -p out; ok=0; : > status.txt
+          prevdate="$(git -C prev log -1 --format=%cI 2>/dev/null || true)"
           while read -r s; do
             [ -z "$s" ] && continue
             if curl -fsSL --retry 3 --retry-delay 20 --max-time 120 \
                  -A "Mozilla/5.0 (map.sql mirror for Travian Resource Manager)" \
                  "https://$s/map.sql" -o "out/$s.sql" && grep -q "INSERT INTO" "out/$s.sql"; then
-              echo "OK    $s ($(wc -l < "out/$s.sql") villages)"; ok=$((ok+1))
+              echo "OK    $s ($(wc -l < "out/$s.sql") villages)"; ok=$((ok+1)); echo "$s ok" >> status.txt
             elif [ -f "prev/$s.sql" ]; then
-              cp "prev/$s.sql" "out/$s.sql"; echo "::warning::download failed, kept yesterday's file: $s"
+              cp "prev/$s.sql" "out/$s.sql"; echo "$s kept" >> status.txt; echo "::warning::download failed, kept yesterday's file: $s"
             else
               rm -f "out/$s.sql"; echo "::warning::download failed: $s"
             fi
@@ -75,6 +76,26 @@ jobs:
           done < servers.txt
           if [ -z "$(ls -A out)" ]; then echo "::error::no map.sql at all"; exit 1; fi
           echo "downloaded today: $ok"
+          # _index.json: when each server's file was really downloaded from the game (the app shows this time).
+          # A file kept from an earlier day keeps its old time, so the app knows it is not today's copy.
+          PREVDATE="$prevdate" python3 - <<'PY'
+          import json, os, datetime
+          try:
+              prev = json.load(open('prev/_index.json'))
+          except Exception:
+              prev = {}
+          now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+          old = os.environ.get('PREVDATE') or '1970-01-01T00:00:00Z'
+          idx = {}
+          for line in open('status.txt'):
+              host, st = line.split()
+              if st == 'ok':
+                  idx[host] = {'at': now}
+              else:
+                  idx[host] = {'at': (prev.get(host) or {}).get('at') or old}
+          json.dump(idx, open('out/_index.json', 'w'), indent=1)
+          print(json.dumps(idx, indent=1))
+          PY
 
       - name: Publish to the mapdata branch (latest copy only)
         run: |
