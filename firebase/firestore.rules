@@ -23,6 +23,17 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    // สถิติผู้ใช้ Scout (13 พ.ย. 2026): เจ้าของสร้าง/แก้ได้อย่างเดียว ไม่มีใครอ่านผ่านแอป
+    match /scoutusers/{uid} {
+      allow read, delete: if false;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'nOps', 'nShared', 'maxA', 'maxB', 'maxSV', 'appVer', 'app', 'lastSeen'])
+        && request.resource.data.email == request.auth.token.email.lower()
+        && request.resource.data.hosts is list && request.resource.data.hosts.size() <= 20
+        && request.resource.data.profiles is list && request.resource.data.profiles.size() <= 20
+        && request.resource.data.lastSeen == request.time;
+    }
+
     // รายชื่อเซิร์ฟเวอร์ที่ผู้ใช้แอปเลือก (เดิม) ให้ GitHub ดึง map.sql ให้ทุกวัน
     match /mapServers/{host} {
       allow read: if true;
