@@ -26,11 +26,13 @@ jobs:
       FIREBASE_PROJECT: "travian-manager-c3b13"
       ACTIVE_DAYS: "30"                           # เซิร์ฟเวอร์ที่ไม่มีใครใช้นานกว่านี้ ไม่ดึง
       MAX_SERVERS: "40"                           # ดึงไม่เกินกี่เซิร์ฟเวอร์ต่อวัน
+      GIVEUP_DAYS: "3"                            # เซิร์ฟที่ไม่เคยมี map.sql และดึงไม่ได้ติดกันเกินกี่วัน = เลิกลอง (จนกว่าจะมีคนขอใหม่)
     steps:
       - name: Server list (fixed + chosen in the app)
         run: |
           python3 - > servers.txt <<'PY'
           import json, os, re, sys, urllib.request, datetime
+          seen = {}
           pat = re.compile(r'^[a-z0-9-]+(\.[a-z0-9-]+)*\.travian\.com$')
           out = [s for s in os.environ['FIXED_SERVERS'].split() if pat.match(s)]
           url = os.environ.get('LIST_URL') or ('https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents/mapServers?pageSize=300' % os.environ['FIREBASE_PROJECT'])
@@ -45,6 +47,7 @@ jobs:
                       continue
                   ts = re.sub(r'\.(\d+)', lambda m: '.' + m.group(1)[:6], ts).replace('Z', '+00:00')
                   t = datetime.datetime.fromisoformat(ts)
+                  seen[host] = t.isoformat()
                   if t >= cutoff:
                       rows.append((t, host))
               for t, host in sorted(rows, reverse=True):   # ใช้ล่าสุดก่อน (ถ้าเกิน MAX_SERVERS)
@@ -52,6 +55,7 @@ jobs:
                       out.append(host)
           except Exception as e:
               print('::warning::cannot read the server list from Firebase: %s' % e, file=sys.stderr)
+          json.dump(seen, open('seen.json', 'w'))
           for s in out[:int(os.environ['MAX_SERVERS'])]:
               print(s)
           PY
@@ -79,9 +83,29 @@ jobs:
               except Exception:
                   pass
           PY
+          # servers that never had a map.sql and have failed for GIVEUP_DAYS days in a row: stop trying (a typo or a server that does not exist)
+          # unless someone asked for it again after we gave up (mapServers lastSeen newer than the give-up time) · FIXED_SERVERS are always tried
+          python3 - > skip.txt <<'PY'
+          import json, os, datetime
+          try: fail = json.load(open('prev/_fail.json'))
+          except Exception: fail = {}
+          try: seen = json.load(open('seen.json'))
+          except Exception: seen = {}
+          now = datetime.datetime.now(datetime.timezone.utc); days = int(os.environ.get('GIVEUP_DAYS', '3'))
+          fixed = os.environ['FIXED_SERVERS'].split()
+          for host, v in fail.items():
+              try:
+                  since = datetime.datetime.fromisoformat(v['since'].replace('Z', '+00:00')); giveup = since + datetime.timedelta(days=days)
+                  last = datetime.datetime.fromisoformat(seen[host]) if host in seen else None
+                  if host not in fixed and now >= giveup and not (last and last > giveup):
+                      print(host)
+              except Exception:
+                  pass
+          PY
           new=0
           while read -r s; do
             [ -z "$s" ] && continue
+            if grep -qxF "$s" skip.txt; then echo "$s skip" >> status.txt; echo "::notice::gave up on $s (no map.sql for ${GIVEUP_DAYS} days; request it again in the app to retry)"; continue; fi
             if grep -qxF "$s" fresh.txt && [ -f "prev/$s.sql" ]; then
               cp "prev/$s.sql" "out/$s.sql"; echo "$s kept" >> status.txt; echo "fresh $s (already downloaded today)"; continue
             fi
@@ -92,11 +116,37 @@ jobs:
             elif [ -f "prev/$s.sql" ]; then
               cp "prev/$s.sql" "out/$s.sql"; echo "$s kept" >> status.txt; echo "::warning::download failed, kept yesterday's file: $s"
             else
-              rm -f "out/$s.sql"; echo "::warning::download failed: $s"
+              rm -f "out/$s.sql"; echo "$s fail" >> status.txt; echo "::warning::download failed: $s"
             fi
             sleep 2
           done < servers.txt
           if [ -z "$(ls -A out)" ]; then echo "::error::no map.sql at all"; exit 1; fi
+          # _fail.json: servers that never had a file and keep failing {host: {since}} · a success removes the entry
+          python3 - <<'PY'
+          import json, os, datetime
+          try: fail = json.load(open('prev/_fail.json'))
+          except Exception: fail = {}
+          try: seen = json.load(open('seen.json'))
+          except Exception: seen = {}
+          days = int(os.environ.get('GIVEUP_DAYS', '3')); now = datetime.datetime.now(datetime.timezone.utc)
+          new = dict(fail)
+          for line in open('status.txt'):
+              host, st = line.split()
+              if st in ('ok', 'kept'):
+                  new.pop(host, None)
+              elif st == 'fail':
+                  v = fail.get(host)
+                  if v:   # asked again after giving up → start a new streak
+                      giveup = datetime.datetime.fromisoformat(v['since'].replace('Z', '+00:00')) + datetime.timedelta(days=days)
+                      if host in seen and datetime.datetime.fromisoformat(seen[host]) > giveup and now > giveup:
+                          new[host] = {'since': now.strftime('%Y-%m-%dT%H:%M:%SZ')}
+                  else:
+                      new[host] = {'since': now.strftime('%Y-%m-%dT%H:%M:%SZ')}
+          json.dump(new, open('out/_fail.json', 'w'), indent=1, sort_keys=True)
+          changed = json.dumps(new, sort_keys=True) != json.dumps(fail, sort_keys=True)
+          print('failing servers:', json.dumps(new))
+          open(os.environ['GITHUB_ENV'], 'a').write('FAILCHG=%d\n' % (1 if changed else 0))
+          PY
           echo "downloaded in this run: $new"
           echo "NEW=$new" >> "$GITHUB_ENV"
           # _index.json: when each server's file was really downloaded from the game (the app shows this time).
@@ -112,6 +162,8 @@ jobs:
           idx = {}
           for line in open('status.txt'):
               host, st = line.split()
+              if st in ('fail', 'skip'):
+                  continue
               if st == 'ok':
                   idx[host] = {'at': now}
               else:
@@ -121,7 +173,7 @@ jobs:
           PY
 
       - name: Publish to the mapdata branch (latest copy only)
-        if: env.NEW != '0'      # nothing downloaded in this run = nothing to publish
+        if: env.NEW != '0' || env.FAILCHG == '1'      # nothing downloaded and no change in failing servers = nothing to publish
         run: |
           cd out
           git init -q
