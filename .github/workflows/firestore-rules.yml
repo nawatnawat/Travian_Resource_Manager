@@ -18,6 +18,9 @@ jobs:
         run: |
           if [ -z "$SA" ]; then echo "::warning::ยังไม่ได้ใส่ secret FIREBASE_SA — ข้ามการ deploy"; exit 0; fi
           printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          if ! jq -e '.type=="service_account" and (.private_key|length>0) and (.client_email|length>0)' "$RUNNER_TEMP/sa.json" >/dev/null 2>&1; then
+            echo "::error::FIREBASE_SA ไม่ใช่ไฟล์คีย์ Service Account (.json) — ต้องวางเนื้อหาทั้งไฟล์ที่มี \"type\": \"service_account\" และ \"private_key\""; rm -f "$RUNNER_TEMP/sa.json"; exit 1; fi
+          echo "คีย์ของ: $(jq -r .client_email "$RUNNER_TEMP/sa.json") · โปรเจกต์ $(jq -r .project_id "$RUNNER_TEMP/sa.json")"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
           echo "HAVE_SA=1" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
