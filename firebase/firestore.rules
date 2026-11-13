@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ข้อมูลของผู้ใช้แต่ละคน (เดิม): อ่าน/เขียนได้เฉพาะเจ้าของ
+    match /travian/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // สถิติการใช้งานสำหรับผู้ดูแล (ใหม่ · v1.70.0): แต่ละคนเขียนได้เฉพาะใบของตัวเอง · ไม่มีใครอ่านผ่านแอปได้ (ผู้ดูแลดูใน Firebase Console)
+    match /users/{uid} {
+      allow read, delete: if false;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'appVer', 'app', 'lastSeen'])
+        && request.resource.data.email == request.auth.token.email.lower()
+        && request.resource.data.hosts is list && request.resource.data.hosts.size() <= 20
+        && request.resource.data.profiles is list && request.resource.data.profiles.size() <= 20
+        && request.resource.data.lastSeen == request.time;
+    }
+
+    // Travian Scout: ข้อมูลส่วนตัวของแต่ละคน (ใหม่ · Scout v0.30.0) · เจ้าของอ่านเขียนได้เฉพาะใบของตัวเอง
+    match /scoutme/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // รายชื่อเซิร์ฟเวอร์ที่ผู้ใช้แอปเลือก (เดิม) ให้ GitHub ดึง map.sql ให้ทุกวัน
+    match /mapServers/{host} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && host.size() <= 80
+        && host.matches('^[a-z0-9-]+([.][a-z0-9-]+)*[.]travian[.]com$')
+        && request.resource.data.keys().hasOnly(['lastSeen'])
+        && request.resource.data.lastSeen == request.time;
+      allow delete: if false;
+    }
+
+    // โปรไฟล์ที่แชร์ให้เพื่อน (ใหม่ · v1.64.0)
+    // owner = uid เจ้าของ · emails = Gmail ที่ได้รับเชิญ (ตัวเล็ก) · roles = {email: 'view' | 'edit'}
+    // เจ้าของ: ทำได้ทุกอย่าง · แก้ไขได้: แก้เฉพาะข้อมูลที่แชร์ (data ver updatedAt by) · ดูอย่างเดียว: อ่านได้อย่างเดียว · คนอื่น: ไม่เห็นเลย
+    match /trshare/{id} {
+      function signedIn() { return request.auth != null; }
+      function myEmail() { return request.auth.token.email.lower(); }
+      function isOwner() { return signedIn() && resource.data.owner == request.auth.uid; }
+      function isMember() { return signedIn() && request.auth.token.email != null && myEmail() in resource.data.emails; }
+
+      allow read: if isOwner() || isMember();
+      allow create: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.emails is list
+        && request.resource.data.emails.size() <= 20
+        && request.resource.data.roles is map;
+      allow update: if (isOwner()
+          && request.resource.data.owner == resource.data.owner
+          && request.resource.data.emails.size() <= 20)
+        || (isMember()
+          && resource.data.roles[myEmail()] == 'edit'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by']));
+      allow delete: if isOwner();
+    }
+
+    // โปรแกรมสอดแนม (แอปแยก · Travian Scout v0.1.0): ปฏิบัติการของทีม
+    // หัวหน้า (owner): ทำได้ทุกอย่าง · สอด/แก้ได้ (edit): แก้หมู่บ้าน/เวลา และกดสถานะการสอด · ดูอย่างเดียว (view): อ่านอย่างเดียว · คนอื่น: ไม่เห็น
+    match /scoutops/{id} {
+      function signedIn() { return request.auth != null; }
+      function myEmail() { return request.auth.token.email.lower(); }
+      function isOwner() { return signedIn() && resource.data.owner == request.auth.uid; }
+      function isMember() { return signedIn() && request.auth.token.email != null && myEmail() in resource.data.emails; }
+
+      allow read: if isOwner() || isMember();
+      allow create: if signedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.emails is list
+        && request.resource.data.emails.size() <= 30
+        && request.resource.data.roles is map;
+      allow update: if (isOwner()
+          && request.resource.data.owner == resource.data.owner
+          && request.resource.data.emails.size() <= 30)
+        || (isMember()
+          && resource.data.roles[myEmail()] == 'edit'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'marks', 'ass', 'name']));
+      allow delete: if isOwner();
+    }
+  }
+}

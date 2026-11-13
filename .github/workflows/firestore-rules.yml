@@ -1,0 +1,33 @@
+# ส่ง Firestore rules ขึ้น Firebase อัตโนมัติ เมื่อไฟล์ firebase/firestore.rules เปลี่ยน (หรือกด Run workflow เอง)
+# ต้องมี secret FIREBASE_SA = เนื้อหาไฟล์คีย์ .json ของ Service Account (สิทธิ์ Firebase Rules Admin + Service Usage Consumer)
+name: Deploy Firestore rules
+on:
+  push:
+    branches: [main]
+    paths: ['firebase/firestore.rules', 'firebase/firebase.json', '.github/workflows/firestore-rules.yml']
+  workflow_dispatch:
+concurrency: firestore-rules
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secret
+        env:
+          SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          if [ -z "$SA" ]; then echo "::warning::ยังไม่ได้ใส่ secret FIREBASE_SA — ข้ามการ deploy"; exit 0; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+          echo "HAVE_SA=1" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        if: env.HAVE_SA == '1'
+        with:
+          node-version: 20
+      - name: Deploy rules
+        if: env.HAVE_SA == '1'
+        working-directory: firebase
+        run: npx -y firebase-tools@13 deploy --only firestore:rules --project travian-manager-c3b13 --non-interactive
+      - name: Remove key file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
