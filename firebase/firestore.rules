@@ -77,19 +77,26 @@ service cloud.firestore {
       function isOwner() { return signedIn() && resource.data.owner == request.auth.uid; }
       function isMember() { return signedIn() && request.auth.token.email != null && myEmail() in resource.data.emails; }
 
-      allow read: if isOwner() || isMember();
+      // หัวหน้าทีม (lead) ดูแลตารางที่สมาชิกสร้างในโปรไฟล์ทีมได้เหมือนของตัวเอง (ผู้ใช้ 15 พ.ย. 2026)
+      function isLead() { return signedIn() && resource.data.get('lead', '') == request.auth.uid; }
+
+      allow read: if isOwner() || isMember() || isLead();
       allow create: if signedIn()
         && request.resource.data.owner == request.auth.uid
         && request.resource.data.emails is list
         && request.resource.data.emails.size() <= 30
         && request.resource.data.roles is map;
       allow update: if (isOwner()
-          && request.resource.data.owner == resource.data.owner
+          && (request.resource.data.owner == resource.data.owner || request.resource.data.owner == resource.data.get('lead', ''))
+          && request.resource.data.emails.size() <= 30)
+        || (isLead()
+          && (request.resource.data.owner == resource.data.owner || request.resource.data.owner == request.auth.uid)
+          && request.resource.data.lead == resource.data.lead
           && request.resource.data.emails.size() <= 30)
         || (isMember()
           && resource.data.roles[myEmail()] == 'edit'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'marks', 'ass', 'name']));
-      allow delete: if isOwner();
+      allow delete: if isOwner() || isLead();
     }
   }
 }
