@@ -98,5 +98,26 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'marks', 'ass', 'name']));
       allow delete: if isOwner() || isLead();
     }
+
+    // 📒 สมุดรายชื่อตารางทีม (Scout v0.49.0, ผู้ใช้ 15 พ.ย. 2026): หัวหน้าเขียน · สมาชิกสิทธิ์ edit แก้ได้แค่ tables (เพิ่ม/ลบตารางที่ตัวเองสร้าง)
+    match /scoutteam/{id} {
+      function tSignedIn() { return request.auth != null; }
+      function tEmail() { return request.auth.token.email.lower(); }
+      function tLead() { return tSignedIn() && resource.data.lead == request.auth.uid; }
+      function tMember() { return tSignedIn() && request.auth.token.email != null && tEmail() in resource.data.emails; }
+      allow read: if tLead() || tMember();
+      allow create: if tSignedIn()
+        && request.resource.data.lead == request.auth.uid
+        && request.resource.data.emails is list
+        && request.resource.data.emails.size() <= 30
+        && request.resource.data.roles is map;
+      allow update: if (tLead()
+          && request.resource.data.lead == resource.data.lead
+          && request.resource.data.emails.size() <= 30)
+        || (tMember()
+          && resource.data.roles[tEmail()] == 'edit'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tables', 'upd']));
+      allow delete: if tLead();
+    }
   }
 }
