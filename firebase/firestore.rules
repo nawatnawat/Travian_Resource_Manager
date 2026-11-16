@@ -11,7 +11,7 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, delete: if false;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'appVer', 'app', 'lastSeen'])
+        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'appVer', 'app', 'lastSeen', 'exp'])
         && request.resource.data.email == request.auth.token.email.lower()
         && request.resource.data.hosts is list && request.resource.data.hosts.size() <= 20
         && request.resource.data.profiles is list && request.resource.data.profiles.size() <= 20
@@ -27,7 +27,7 @@ service cloud.firestore {
     match /scoutusers/{uid} {
       allow read, delete: if false;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'nOps', 'nShared', 'maxA', 'maxB', 'maxSV', 'appVer', 'app', 'lastSeen'])
+        && request.resource.data.keys().hasOnly(['email', 'name', 'hosts', 'profiles', 'nProfiles', 'nOps', 'nShared', 'maxA', 'maxB', 'maxSV', 'appVer', 'app', 'lastSeen', 'exp'])
         && request.resource.data.email == request.auth.token.email.lower()
         && request.resource.data.hosts is list && request.resource.data.hosts.size() <= 20
         && request.resource.data.profiles is list && request.resource.data.profiles.size() <= 20
@@ -40,7 +40,7 @@ service cloud.firestore {
       allow create, update: if request.auth != null
         && host.size() <= 80
         && host.matches('^[a-z0-9-]+([.][a-z0-9-]+)*[.]travian[.]com$')
-        && request.resource.data.keys().hasOnly(['lastSeen'])
+        && request.resource.data.keys().hasOnly(['lastSeen', 'exp'])
         && request.resource.data.lastSeen == request.time;
       allow delete: if false;
     }
@@ -65,7 +65,7 @@ service cloud.firestore {
           && request.resource.data.emails.size() <= 20)
         || (isMember()
           && resource.data.roles[myEmail()] == 'edit'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'exp']));
       allow delete: if isOwner();
     }
 
@@ -116,7 +116,7 @@ service cloud.firestore {
           && request.resource.data.emails.size() <= 30)
         || (tMember()
           && resource.data.roles[tEmail()] == 'edit'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tables', 'upd']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tables', 'upd', 'exp']));
       allow delete: if tLead();
     }
   }
