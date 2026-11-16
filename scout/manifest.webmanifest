@@ -1,0 +1,2 @@
+{"name":"TScout","short_name":"TScout","description":"Travian Scout","id":"./","start_url":"./","scope":"./","display":"standalone","orientation":"any","background_color":"#f3f1ea","theme_color":"#5b3f22","lang":"th",
+"icons":[{"src":"../icons/ts-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"../icons/ts-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"../icons/ts-m512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}

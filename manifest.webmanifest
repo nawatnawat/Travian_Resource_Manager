@@ -1,0 +1,2 @@
+{"name":"TResource","short_name":"TResource","description":"Travian Resource Manager","id":"./","start_url":"./","scope":"./","display":"standalone","orientation":"any","background_color":"#e4e1d8","theme_color":"#2d6a56","lang":"th",
+"icons":[{"src":"icons/tr-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icons/tr-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"icons/tr-m512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
