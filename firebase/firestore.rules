@@ -95,7 +95,7 @@ service cloud.firestore {
           && request.resource.data.emails.size() <= 30)
         || (isMember()
           && resource.data.roles[myEmail()] == 'edit'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'marks', 'ass', 'name']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['data', 'ver', 'updatedAt', 'by', 'marks', 'ass', 'name', 'exp']));
       allow delete: if isOwner() || isLead();
     }
 
