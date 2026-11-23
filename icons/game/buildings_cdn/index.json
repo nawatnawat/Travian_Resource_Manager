@@ -310,5 +310,5 @@
   ]
  },
  "src": "cdn.legends.travian.com/gpack/718.5/img_ltr/global/buildings/<tribe>/icon/type<gid>_<size>.png",
- "note": "teuton type35 (Brewery) small sent by the user; no medium version found on the CDN"
+ "note": "teuton type35 (Brewery): small sent by the user; medium = 64 px image from knowledgebase.legends.travian.com/04b7253aabaed6351420.png scaled to 26 px"
 }
