@@ -86,6 +86,7 @@
    30,
    32,
    34,
+   35,
    37,
    38,
    39,
@@ -308,5 +309,6 @@
    49
   ]
  },
- "src": "cdn.legends.travian.com/gpack/718.5/img_ltr/global/buildings/<tribe>/icon/type<gid>_<size>.png"
+ "src": "cdn.legends.travian.com/gpack/718.5/img_ltr/global/buildings/<tribe>/icon/type<gid>_<size>.png",
+ "note": "teuton type35 (Brewery) small sent by the user; no medium version found on the CDN"
 }
